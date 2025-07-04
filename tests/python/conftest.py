@@ -47,12 +47,12 @@ api_key = test_api_key
 allowed_origins = localhost,127.0.0.1
 rate_limit = 100
 """
-    
+
     with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False) as f:
         f.write(config_content)
         f.flush()
         yield f.name
-    
+
     # Cleanup
     try:
         os.unlink(f.name)

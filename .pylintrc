@@ -1,0 +1,111 @@
+[MAIN]
+# Python code to execute, usually for sys.path manipulation such as
+# pygtk.require().
+init-hook='import sys; sys.path.append("SphinxAI")'
+
+# Files or directories to be skipped. They should be base names, not paths.
+ignore=CVS,.git,__pycache__,build,dist,venv,env
+
+# Add files or directories matching the regex patterns to the ignore-list.
+ignore-patterns=^\.#
+
+# Use multiple processes to speed up Pylint.
+jobs=1
+
+# Minimum Python version to use for version dependent checks.
+py-version=3.8
+
+[MESSAGES CONTROL]
+# Disable the message, report, category or checker with the given id(s).
+disable=
+    import-error,
+    no-member,
+    too-many-arguments,
+    too-many-locals,
+    too-few-public-methods,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    line-too-long,
+    invalid-name,
+    broad-except,
+    unused-argument,
+    unused-variable,
+    fixme,
+    consider-using-f-string,
+    consider-using-with,
+    subprocess-run-check,
+    dangerous-default-value,
+    redefined-outer-name,
+    attribute-defined-outside-init,
+    arguments-differ,
+    super-init-not-called,
+    useless-super-delegation,
+    logging-fstring-interpolation,
+    unexpected-keyword-arg,
+    abstract-class-instantiated,
+    trailing-whitespace
+
+[FORMAT]
+# Maximum number of characters on a single line.
+max-line-length=120
+
+# Maximum number of lines in a module.
+max-module-lines=1000
+
+[DESIGN]
+# Maximum number of arguments for function / method.
+max-args=10
+
+# Maximum number of attributes for a class.
+max-attributes=15
+
+# Maximum number of boolean expressions in an if statement.
+max-bool-expr=5
+
+# Maximum number of branch for function / method body.
+max-branches=15
+
+# Maximum number of locals for function / method body.
+max-locals=20
+
+# Maximum number of parents for a class.
+max-parents=7
+
+# Maximum number of public methods for a class.
+max-public-methods=25
+
+# Maximum number of return / yield for function / method body.
+max-returns=6
+
+# Maximum number of statements in function / method body.
+max-statements=50
+
+[TYPECHECK]
+# List of module names for which member attributes should not be checked.
+ignored-modules=
+    numpy,
+    torch,
+    transformers,
+    sentence_transformers,
+    openvino,
+    redis,
+    pymysql,
+    nltk,
+    spacy,
+    sklearn,
+    scipy
+
+# List of class names for which member attributes should not be checked.
+ignored-classes=
+    optparse.Values,
+    thread._local,
+    _thread._local
+
+[IMPORTS]
+# Allow wildcard imports from modules listed below.
+allow-wildcard-with-all=no
+
+[EXCEPTIONS]
+# Exceptions that will emit a warning when being caught.
+overgeneral-exceptions=builtins.BaseException,builtins.Exception

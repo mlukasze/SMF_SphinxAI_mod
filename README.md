@@ -1,6 +1,6 @@
 # Sphinx AI Search for SMF
 
-[![Tests](https://github.com/username/smf-sphinx-ai-search/actions/workflows/tests.yml/badge.svg)](https://github.com/username/smf-sphinx-ai-search/actions/workflows/tests.yml)
+[![Tests](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/tests.yml/badge.svg)](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/tests.yml)
 [![Coverage](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search/branch/main/graph/badge.svg)](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search)
 [![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
 [![PHP](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://www.php.net/)

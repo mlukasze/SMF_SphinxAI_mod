@@ -13,23 +13,23 @@ def main():
     # Get the test directory
     test_dir = Path(__file__).parent
     project_root = test_dir.parent
-    
+
     print("SphinxAI Test Runner")
     print("=" * 50)
     print(f"Test directory: {test_dir}")
     print(f"Project root: {project_root}")
     print()
-    
+
     # Add project root to Python path
     sys.path.insert(0, str(project_root))
-    
+
     try:
         # Try to import pytest
         import pytest
         print("✓ pytest is available")
     except ImportError:
         print("✗ pytest not found. Installing test dependencies...")
-        
+
         # Install test dependencies
         requirements_file = test_dir / "requirements_test.txt"
         if requirements_file.exists():
@@ -47,29 +47,29 @@ def main():
         else:
             print("✗ requirements_test.txt not found")
             return 1
-    
+
     # Change to test directory
     os.chdir(test_dir)
-    
+
     # Run basic import tests first
     print("\nRunning import tests...")
     try:
         # Test basic imports
         sys.path.insert(0, str(project_root / "SphinxAI"))
-        
+
         from utils.cache import SphinxAICache
         print("✓ Cache module imported successfully")
-        
+
         from utils.config_manager import ConfigManager
         print("✓ Config manager imported successfully")
-        
+
     except ImportError as e:
         print(f"✗ Import test failed: {e}")
         print("Running basic tests anyway...")
-    
+
     # Run pytest with basic configuration
     print("\nRunning pytest...")
-    
+
     # Basic pytest arguments
     pytest_args = [
         "python",  # Test directory
@@ -79,7 +79,7 @@ def main():
         "-x",      # Stop on first failure
         "--disable-warnings",  # Disable warnings for cleaner output
     ]
-    
+
     # Add coverage if available
     try:
         import coverage
@@ -91,18 +91,18 @@ def main():
         print("✓ Coverage reporting enabled")
     except ImportError:
         print("! Coverage not available (install pytest-cov for coverage)")
-    
+
     try:
         # Run tests
         exit_code = pytest.main(pytest_args)
-        
+
         if exit_code == 0:
             print("\n✓ All tests passed!")
         else:
             print(f"\n✗ Tests failed with exit code {exit_code}")
-        
+
         return exit_code
-        
+
     except Exception as e:
         print(f"✗ Error running tests: {e}")
         return 1

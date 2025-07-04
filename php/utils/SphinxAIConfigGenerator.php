@@ -138,32 +138,122 @@ class SphinxAIConfigGenerator
 		$smf_settings = "\n# SMF Integration Settings\n";
 		$smf_settings .= "smf_board_dir = " . $boarddir . "\n";
 		
-		// Add cache directory based on SMF cache settings
-		if (!empty($modSettings['cache_enable'])) {
-			$cache_dir = !empty($modSettings['cache_dir']) ? $modSettings['cache_dir'] : $boarddir . '/cache';
-			$smf_settings .= "smf_cache_dir = " . $cache_dir . "\n";
-		}
-		
-		// Add Redis settings if available
-		if (!empty($modSettings['cache_enable']) && !empty($modSettings['cache_memcached'])) {
-			$redis_host = !empty($modSettings['cache_memcached']) ? explode(':', $modSettings['cache_memcached'])[0] : 'localhost';
-			$redis_port = !empty($modSettings['cache_memcached']) && strpos($modSettings['cache_memcached'], ':') !== false 
-				? explode(':', $modSettings['cache_memcached'])[1] : '6379';
-			
-			$config_content = str_replace(
-				'host = localhost',
-				'host = ' . $redis_host,
-				$config_content
-			);
-			$config_content = str_replace(
-				'port = 6379',
-				'port = ' . $redis_port,
-				$config_content
-			);
+		// Extract and configure cache settings from SMF
+		$cache_config = self::extractCacheSettings();
+		if (!empty($cache_config)) {
+			// Update cache section in config content
+			$config_content = self::updateCacheSection($config_content, $cache_config);
 		}
 		
 		// Append SMF settings to the end
 		return $config_content . $smf_settings;
+	}
+	
+	/**
+	 * Extract cache settings from SMF configuration
+	 * 
+	 * @return array Cache configuration
+	 */
+	private static function extractCacheSettings(): array
+	{
+		global $modSettings;
+		
+		$cache_config = array(
+			'enabled' => false,
+			'type' => 'smf',  // Always use SMF cache API
+			'host' => 'localhost',
+			'port' => 6379,
+			'database' => 0,
+			'prefix' => 'smf_',
+		);
+		
+		// Check if caching is enabled in SMF
+		if (!empty($modSettings['cache_enable'])) {
+			$cache_config['enabled'] = true;
+			
+			// Determine underlying cache type based on SMF settings for informational purposes
+			if (!empty($modSettings['cache_memcached'])) {
+				// SMF is using Memcached/Redis behind the scenes
+				$cache_config['underlying_type'] = 'redis';
+				
+				// Parse connection string (format: host:port or just host)
+				$connection = $modSettings['cache_memcached'];
+				if (strpos($connection, ':') !== false) {
+					list($host, $port) = explode(':', $connection, 2);
+					$cache_config['host'] = trim($host);
+					$cache_config['port'] = (int)trim($port);
+				} else {
+					$cache_config['host'] = trim($connection);
+				}
+			} elseif (!empty($modSettings['cache_filebased'])) {
+				// SMF is using file-based caching
+				$cache_config['underlying_type'] = 'file';
+			} else {
+				// Default underlying type
+				$cache_config['underlying_type'] = 'file';
+			}
+			
+			// Set cache prefix based on SMF table prefix
+			global $db_prefix;
+			if (!empty($db_prefix)) {
+				$cache_config['prefix'] = $db_prefix . 'sphinxai_';
+			}
+		}
+		
+		return $cache_config;
+	}
+	
+	/**
+	 * Update cache section in configuration content
+	 * 
+	 * @param string $config_content Configuration content
+	 * @param array $cache_config Cache configuration
+	 * @return string Updated configuration content
+	 */
+	private static function updateCacheSection(string $config_content, array $cache_config): string
+	{
+		// Replace cache configuration values
+		$replacements = array(
+			'enabled = true' => 'enabled = ' . ($cache_config['enabled'] ? 'true' : 'false'),
+			'type = redis' => 'type = ' . $cache_config['type'],
+			'host = localhost' => 'host = ' . $cache_config['host'],
+			'port = 6379' => 'port = ' . $cache_config['port'],
+			'database = 0' => 'database = ' . $cache_config['database'],
+		);
+		
+		// Apply cache section replacements
+		foreach ($replacements as $search => $replace) {
+			// Only replace within [cache] section
+			if (strpos($config_content, '[cache]') !== false) {
+				$cache_section_start = strpos($config_content, '[cache]');
+				$next_section_start = strpos($config_content, '[', $cache_section_start + 1);
+				
+				if ($next_section_start === false) {
+					$next_section_start = strlen($config_content);
+				}
+				
+				$cache_section = substr($config_content, $cache_section_start, $next_section_start - $cache_section_start);
+				$updated_cache_section = str_replace($search, $replace, $cache_section);
+				
+				$config_content = substr_replace($config_content, $updated_cache_section, $cache_section_start, $next_section_start - $cache_section_start);
+			}
+		}
+		
+		// Add cache type and prefix
+		$additional_cache_settings = "\n# Using SMF cache API (underlying type: " . ($cache_config['underlying_type'] ?? 'unknown') . ")\n";
+		$additional_cache_settings .= "prefix = " . $cache_config['prefix'] . "\n";
+		
+		// Insert additional settings after [cache] section header
+		if (strpos($config_content, '[cache]') !== false) {
+			$cache_header_pos = strpos($config_content, '[cache]');
+			$cache_header_end = strpos($config_content, "\n", $cache_header_pos);
+			
+			if ($cache_header_end !== false) {
+				$config_content = substr_replace($config_content, $additional_cache_settings, $cache_header_end, 0);
+			}
+		}
+		
+		return $config_content;
 	}
 	
 	/**

@@ -2,7 +2,8 @@
 
 /**
  * SphinxAI Cache Service
- * Provides Redis-based caching for search results and model data
+ * Provides SMF cache API-based caching for search results and model data
+ * Uses SMF's built-in cache system (Redis, Memcached, or file-based)
  * 
  * @package SphinxAI
  * @version 1.0.0
@@ -15,131 +16,48 @@ if (!defined('SMF')) {
 
 class SphinxAICache
 {
-    /** @var Redis|null Redis connection instance */
-    private $redis = null;
-    
-    /** @var bool Whether Redis is available and connected */
-    private $isConnected = false;
-    
-    /** @var array Default cache configuration */
-    private $config = [
-        'host' => '127.0.0.1',
-        'port' => 6379,
-        'password' => null,
-        'database' => 0,
-        'timeout' => 2.0,
-        'read_timeout' => 2.0,
-        'persistent' => true,
-        'prefix' => 'sphinxai:'
-    ];
+    /** @var bool Whether SMF cache is available */
+    private $isAvailable = false;
     
     /** @var int Default TTL in seconds (1 hour) */
     private $defaultTtl = 3600;
     
+    /** @var string Cache key prefix */
+    private $prefix = 'sphinxai_';
+    
     /** @var array Cache key prefixes for different data types */
     private const KEY_PREFIXES = [
-        'search' => 'search:',
-        'model' => 'model:',
-        'config' => 'config:',
-        'stats' => 'stats:',
-        'suggestions' => 'suggestions:'
+        'search' => 'search_',
+        'model' => 'model_',
+        'config' => 'config_',
+        'stats' => 'stats_',
+        'suggestions' => 'suggestions_'
     ];
     
     /**
      * Constructor
-     * @param array $config Redis configuration options
      */
-    public function __construct(array $config = [])
+    public function __construct()
     {
         global $modSettings;
         
-        // Merge with SMF settings if available
-        $smfConfig = [
-            'host' => $modSettings['sphinx_ai_redis_host'] ?? '127.0.0.1',
-            'port' => (int)($modSettings['sphinx_ai_redis_port'] ?? 6379),
-            'password' => $modSettings['sphinx_ai_redis_password'] ?? null,
-            'database' => (int)($modSettings['sphinx_ai_redis_db'] ?? 0),
-            'prefix' => $modSettings['sphinx_ai_redis_prefix'] ?? 'sphinxai:'
-        ];
+        // Check if SMF cache is enabled
+        $this->isAvailable = !empty($modSettings['cache_enable']);
         
-        $this->config = array_merge($this->config, $smfConfig, $config);
-        $this->connect();
-    }
-    
-    /**
-     * Establish Redis connection
-     * @return bool True if connection successful
-     */
-    private function connect(): bool
-    {
-        if ($this->isConnected) {
-            return true;
-        }
-        
-        try {
-            if (!extension_loaded('redis')) {
-                error_log('SphinxAI Cache: Redis extension not available');
-                return false;
-            }
-            
-            $this->redis = new Redis();
-            
-            if ($this->config['persistent']) {
-                $connected = $this->redis->pconnect(
-                    $this->config['host'],
-                    $this->config['port'],
-                    $this->config['timeout'],
-                    'sphinxai_' . md5($this->config['host'] . $this->config['port'])
-                );
-            } else {
-                $connected = $this->redis->connect(
-                    $this->config['host'],
-                    $this->config['port'],
-                    $this->config['timeout']
-                );
-            }
-            
-            if (!$connected) {
-                error_log('SphinxAI Cache: Failed to connect to Redis');
-                return false;
-            }
-            
-            // Set read timeout
-            $this->redis->setOption(Redis::OPT_READ_TIMEOUT, $this->config['read_timeout']);
-            
-            // Authenticate if password provided
-            if (!empty($this->config['password'])) {
-                if (!$this->redis->auth($this->config['password'])) {
-                    error_log('SphinxAI Cache: Redis authentication failed');
-                    return false;
-                }
-            }
-            
-            // Select database
-            if ($this->config['database'] > 0) {
-                $this->redis->select($this->config['database']);
-            }
-            
-            // Set key prefix
-            $this->redis->setOption(Redis::OPT_PREFIX, $this->config['prefix']);
-            
-            $this->isConnected = true;
-            return true;
-            
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Redis connection error - ' . $e->getMessage());
-            $this->isConnected = false;
-            return false;
+        // Use SMF table prefix for cache keys
+        global $db_prefix;
+        if (!empty($db_prefix)) {
+            $this->prefix = $db_prefix . 'sphinxai_';
         }
     }
     
     /**
-     * Check if Redis is available and connected
+     * Check if cache is available
      * @return bool
      */
     public function isAvailable(): bool
     {
-        return $this->isConnected && $this->redis !== null;
+        return $this->isAvailable && function_exists('cache_put_data') && function_exists('cache_get_data');
     }
     
     /**
@@ -151,7 +69,48 @@ class SphinxAICache
     private function getCacheKey(string $type, string $key): string
     {
         $prefix = self::KEY_PREFIXES[$type] ?? '';
-        return $prefix . hash('sha256', $key);
+        return $this->prefix . $prefix . hash('sha256', $key);
+    }
+    
+    /**
+     * Put data into SMF cache
+     * @param string $key Cache key
+     * @param mixed $data Data to cache
+     * @param int $ttl Time to live in seconds
+     * @return bool Success status
+     */
+    private function putCache(string $key, $data, int $ttl): bool
+    {
+        if (!$this->isAvailable()) {
+            return false;
+        }
+        
+        try {
+            cache_put_data($key, $data, $ttl);
+            return true;
+        } catch (Exception $e) {
+            error_log('SphinxAI Cache: Failed to put cache data - ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get data from SMF cache
+     * @param string $key Cache key
+     * @return mixed Cached data or null if not found
+     */
+    private function getCache(string $key)
+    {
+        if (!$this->isAvailable()) {
+            return null;
+        }
+        
+        try {
+            return cache_get_data($key);
+        } catch (Exception $e) {
+            error_log('SphinxAI Cache: Failed to get cache data - ' . $e->getMessage());
+            return null;
+        }
     }
     
     /**
@@ -182,16 +141,7 @@ class SphinxAICache
             'count' => count($results)
         ];
         
-        try {
-            return $this->redis->setex(
-                $key,
-                $ttl ?? $this->defaultTtl,
-                json_encode($data, JSON_UNESCAPED_UNICODE)
-            );
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Failed to cache search results - ' . $e->getMessage());
-            return false;
-        }
+        return $this->putCache($key, $data, $ttl ?? $this->defaultTtl);
     }
     
     /**
@@ -212,24 +162,18 @@ class SphinxAICache
             'version' => $this->getSearchVersion()
         ]));
         
-        try {
-            $cached = $this->redis->get($key);
-            if ($cached === false) {
-                return null;
-            }
-            
-            $data = json_decode($cached, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                error_log('SphinxAI Cache: Invalid JSON in cached data');
-                return null;
-            }
-            
-            return $data;
-            
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Failed to retrieve cached search results - ' . $e->getMessage());
+        $cached = $this->getCache($key);
+        if ($cached === null || $cached === false) {
             return null;
         }
+        
+        // Validate cached data structure
+        if (!is_array($cached) || !isset($cached['results'])) {
+            error_log('SphinxAI Cache: Invalid cached search results structure');
+            return null;
+        }
+        
+        return $cached;
     }
     
     /**
@@ -248,12 +192,7 @@ class SphinxAICache
         $key = $this->getCacheKey('model', $modelId);
         $ttl = $ttl ?? (24 * 3600); // 24 hours default for model data
         
-        try {
-            return $this->redis->setex($key, $ttl, json_encode($data, JSON_UNESCAPED_UNICODE));
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Failed to cache model data - ' . $e->getMessage());
-            return false;
-        }
+        return $this->putCache($key, $data, $ttl);
     }
     
     /**
@@ -268,19 +207,9 @@ class SphinxAICache
         }
         
         $key = $this->getCacheKey('model', $modelId);
+        $cached = $this->getCache($key);
         
-        try {
-            $cached = $this->redis->get($key);
-            if ($cached === false) {
-                return null;
-            }
-            
-            return json_decode($cached, true);
-            
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Failed to retrieve cached model data - ' . $e->getMessage());
-            return null;
-        }
+        return ($cached === false || $cached === null) ? null : $cached;
     }
     
     /**
@@ -299,12 +228,7 @@ class SphinxAICache
         $key = $this->getCacheKey('suggestions', strtolower(trim($prefix)));
         $ttl = $ttl ?? (6 * 3600); // 6 hours default for suggestions
         
-        try {
-            return $this->redis->setex($key, $ttl, json_encode($suggestions));
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Failed to cache suggestions - ' . $e->getMessage());
-            return false;
-        }
+        return $this->putCache($key, $suggestions, $ttl);
     }
     
     /**
@@ -319,19 +243,9 @@ class SphinxAICache
         }
         
         $key = $this->getCacheKey('suggestions', strtolower(trim($prefix)));
+        $cached = $this->getCache($key);
         
-        try {
-            $cached = $this->redis->get($key);
-            if ($cached === false) {
-                return null;
-            }
-            
-            return json_decode($cached, true);
-            
-        } catch (Exception $e) {
-            error_log('SphinxAI Cache: Failed to retrieve cached suggestions - ' . $e->getMessage());
-            return null;
-        }
+        return ($cached === false || $cached === null) ? null : $cached;
     }
     
     /**
@@ -348,29 +262,61 @@ class SphinxAICache
         }
         
         try {
-            $pipe = $this->redis->multi(Redis::PIPELINE);
+            // Get existing stats
+            $statsKey = $this->getCacheKey('stats', 'search_stats');
+            $stats = $this->getCache($statsKey) ?: [
+                'search_count' => 0,
+                'popular_queries' => [],
+                'response_times' => [],
+                'result_counts' => [],
+                'daily_stats' => []
+            ];
             
-            // Increment search count
-            $pipe->incr('stats:search_count');
+            // Update search count
+            $stats['search_count']++;
             
-            // Track popular queries
-            $pipe->zincrby('stats:popular_queries', 1, $query);
+            // Track popular queries (keep top 100)
+            $queryHash = hash('sha256', $query);
+            if (!isset($stats['popular_queries'][$queryHash])) {
+                $stats['popular_queries'][$queryHash] = ['query' => $query, 'count' => 0];
+            }
+            $stats['popular_queries'][$queryHash]['count']++;
+            
+            // Sort and keep top 100 popular queries
+            uasort($stats['popular_queries'], function($a, $b) {
+                return $b['count'] - $a['count'];
+            });
+            $stats['popular_queries'] = array_slice($stats['popular_queries'], 0, 100, true);
             
             // Track response times (keep last 1000 entries)
-            $pipe->lpush('stats:response_times', $responseTime);
-            $pipe->ltrim('stats:response_times', 0, 999);
+            $stats['response_times'][] = $responseTime;
+            if (count($stats['response_times']) > 1000) {
+                $stats['response_times'] = array_slice($stats['response_times'], -1000);
+            }
             
             // Track result counts
-            $pipe->lpush('stats:result_counts', $resultCount);
-            $pipe->ltrim('stats:result_counts', 0, 999);
+            $stats['result_counts'][] = $resultCount;
+            if (count($stats['result_counts']) > 1000) {
+                $stats['result_counts'] = array_slice($stats['result_counts'], -1000);
+            }
             
             // Daily stats
             $date = date('Y-m-d');
-            $pipe->incr("stats:daily:$date:searches");
-            $pipe->expire("stats:daily:$date:searches", 30 * 24 * 3600); // Keep for 30 days
+            if (!isset($stats['daily_stats'][$date])) {
+                $stats['daily_stats'][$date] = 0;
+            }
+            $stats['daily_stats'][$date]++;
             
-            $pipe->exec();
-            return true;
+            // Keep only last 30 days
+            $cutoffDate = date('Y-m-d', strtotime('-30 days'));
+            foreach ($stats['daily_stats'] as $statsDate => $count) {
+                if ($statsDate < $cutoffDate) {
+                    unset($stats['daily_stats'][$statsDate]);
+                }
+            }
+            
+            // Save updated stats
+            return $this->putCache($statsKey, $stats, 24 * 3600); // 24 hours
             
         } catch (Exception $e) {
             error_log('SphinxAI Cache: Failed to update search stats - ' . $e->getMessage());
@@ -389,21 +335,31 @@ class SphinxAICache
         }
         
         try {
-            $pipe = $this->redis->multi(Redis::PIPELINE);
+            $statsKey = $this->getCacheKey('stats', 'search_stats');
+            $stats = $this->getCache($statsKey);
             
-            $pipe->get('stats:search_count');
-            $pipe->zrevrange('stats:popular_queries', 0, 9, true); // Top 10 queries
-            $pipe->lrange('stats:response_times', 0, 99); // Last 100 response times
-            $pipe->lrange('stats:result_counts', 0, 99); // Last 100 result counts
+            if (!$stats) {
+                return [
+                    'total_searches' => 0,
+                    'popular_queries' => [],
+                    'avg_response_time' => 0,
+                    'avg_result_count' => 0,
+                    'cache_hit_rate' => 0
+                ];
+            }
             
-            $results = $pipe->exec();
+            $responseTimes = $stats['response_times'] ?? [];
+            $resultCounts = $stats['result_counts'] ?? [];
+            $popularQueries = [];
             
-            $responseTimes = array_map('floatval', $results[2] ?? []);
-            $resultCounts = array_map('intval', $results[3] ?? []);
+            // Format popular queries for output
+            foreach ($stats['popular_queries'] ?? [] as $queryData) {
+                $popularQueries[$queryData['query']] = $queryData['count'];
+            }
             
             return [
-                'total_searches' => (int)($results[0] ?? 0),
-                'popular_queries' => $results[1] ?? [],
+                'total_searches' => (int)($stats['search_count'] ?? 0),
+                'popular_queries' => $popularQueries,
                 'avg_response_time' => !empty($responseTimes) ? array_sum($responseTimes) / count($responseTimes) : 0,
                 'avg_result_count' => !empty($resultCounts) ? array_sum($resultCounts) / count($resultCounts) : 0,
                 'cache_hit_rate' => $this->getCacheHitRate()
@@ -422,8 +378,11 @@ class SphinxAICache
     private function getCacheHitRate(): float
     {
         try {
-            $hits = (int)$this->redis->get('stats:cache_hits') ?: 0;
-            $misses = (int)$this->redis->get('stats:cache_misses') ?: 0;
+            $hitStatsKey = $this->getCacheKey('stats', 'cache_hits');
+            $hitStats = $this->getCache($hitStatsKey) ?: ['hits' => 0, 'misses' => 0];
+            
+            $hits = $hitStats['hits'];
+            $misses = $hitStats['misses'];
             $total = $hits + $misses;
             
             return $total > 0 ? ($hits / $total) * 100 : 0;
@@ -440,7 +399,10 @@ class SphinxAICache
     {
         if ($this->isAvailable()) {
             try {
-                $this->redis->incr('stats:cache_hits');
+                $hitStatsKey = $this->getCacheKey('stats', 'cache_hits');
+                $hitStats = $this->getCache($hitStatsKey) ?: ['hits' => 0, 'misses' => 0];
+                $hitStats['hits']++;
+                $this->putCache($hitStatsKey, $hitStats, 24 * 3600);
             } catch (Exception $e) {
                 // Ignore errors for stats
             }
@@ -454,7 +416,10 @@ class SphinxAICache
     {
         if ($this->isAvailable()) {
             try {
-                $this->redis->incr('stats:cache_misses');
+                $hitStatsKey = $this->getCacheKey('stats', 'cache_hits');
+                $hitStats = $this->getCache($hitStatsKey) ?: ['hits' => 0, 'misses' => 0];
+                $hitStats['misses']++;
+                $this->putCache($hitStatsKey, $hitStats, 24 * 3600);
             } catch (Exception $e) {
                 // Ignore errors for stats
             }
@@ -463,8 +428,10 @@ class SphinxAICache
     
     /**
      * Clear cache by pattern
-     * @param string $pattern Cache key pattern (without prefix)
-     * @return int Number of keys deleted
+     * Note: SMF cache doesn't support pattern-based clearing like Redis,
+     * so this method clears specific known cache keys
+     * @param string $pattern Cache key pattern (limited support)
+     * @return int Number of keys attempted to clear
      */
     public function clearCache(string $pattern = '*'): int
     {
@@ -472,13 +439,39 @@ class SphinxAICache
             return 0;
         }
         
+        $cleared = 0;
+        
         try {
-            $keys = $this->redis->keys($pattern);
-            if (empty($keys)) {
-                return 0;
+            // Clear known cache types based on pattern
+            $typesToClear = [];
+            
+            if ($pattern === '*' || strpos($pattern, 'search') !== false) {
+                $typesToClear[] = 'search';
+            }
+            if ($pattern === '*' || strpos($pattern, 'model') !== false) {
+                $typesToClear[] = 'model';
+            }
+            if ($pattern === '*' || strpos($pattern, 'suggestions') !== false) {
+                $typesToClear[] = 'suggestions';
+            }
+            if ($pattern === '*' || strpos($pattern, 'stats') !== false) {
+                $typesToClear[] = 'stats';
             }
             
-            return $this->redis->del($keys);
+            // Note: Since SMF cache doesn't support pattern-based clearing,
+            // we can only clear by removing specific known keys.
+            // This is a limitation compared to direct Redis usage.
+            
+            foreach ($typesToClear as $type) {
+                // Clear the main stats key for each type
+                $key = $this->prefix . self::KEY_PREFIXES[$type] . 'main';
+                if (function_exists('clean_cache')) {
+                    clean_cache($key);
+                    $cleared++;
+                }
+            }
+            
+            return $cleared;
             
         } catch (Exception $e) {
             error_log('SphinxAI Cache: Failed to clear cache - ' . $e->getMessage());
@@ -488,11 +481,11 @@ class SphinxAICache
     
     /**
      * Clear all search result cache
-     * @return int Number of keys deleted
+     * @return int Number of keys attempted to clear
      */
     public function clearSearchCache(): int
     {
-        return $this->clearCache(self::KEY_PREFIXES['search'] . '*');
+        return $this->clearCache('search');
     }
     
     /**
@@ -511,28 +504,18 @@ class SphinxAICache
     }
     
     /**
-     * Close Redis connection
+     * Close connection (no-op for SMF cache)
      */
     public function close(): void
     {
-        if ($this->redis && $this->isConnected) {
-            try {
-                if (!$this->config['persistent']) {
-                    $this->redis->close();
-                }
-            } catch (Exception $e) {
-                // Ignore close errors
-            }
-            
-            $this->isConnected = false;
-        }
+        // SMF cache doesn't require explicit connection closing
     }
     
     /**
-     * Destructor - ensure connection is closed
+     * Destructor (no-op for SMF cache)
      */
     public function __destruct()
     {
-        $this->close();
+        // SMF cache doesn't require cleanup
     }
 }

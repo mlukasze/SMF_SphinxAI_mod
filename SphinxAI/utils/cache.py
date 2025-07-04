@@ -1,6 +1,6 @@
 """
 SphinxAI Cache Service - Python Implementation
-Provides Redis-based caching for search results and model data
+Provides caching for search results and model data using configuration from INI file
 
 @package SphinxAI
 @version 1.0.0
@@ -11,6 +11,8 @@ import json
 import hashlib
 import logging
 import time
+import configparser
+import os
 from typing import Dict, List, Optional, Any, Tuple
 from functools import wraps
 
@@ -23,7 +25,7 @@ except ImportError:
 
 
 class SphinxAICache:
-    """Redis-based caching service for SphinxAI"""
+    """Cache service for SphinxAI that reads configuration from INI file"""
     
     # Cache key prefixes for different data types
     KEY_PREFIXES = {
@@ -35,38 +37,63 @@ class SphinxAICache:
         'embeddings': 'embeddings:'
     }
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config_path: Optional[str] = None):
         """
-        Initialize Redis cache connection
+        Initialize cache connection based on INI configuration
         
         Args:
-            config: Redis configuration dictionary
+            config_path: Path to configuration file
         """
         self.redis_client = None
         self.is_connected = False
+        self.cache_enabled = False
         self.logger = logging.getLogger(__name__)
         
-        # Default configuration
-        self.config = {
-            'host': '127.0.0.1',
-            'port': 6379,
-            'password': None,
-            'db': 0,
-            'socket_timeout': 2.0,
-            'socket_connect_timeout': 2.0,
-            'decode_responses': True,
-            'retry_on_timeout': True,
-            'health_check_interval': 30,
-            'prefix': 'sphinxai:'
-        }
+        # Import ConfigManager here to avoid circular imports
+        try:
+            from .config_manager import ConfigManager
+            self.config_manager = ConfigManager(config_path)
+            self.config = self.config_manager.get_cache_config()
+            self.cache_enabled = self.config.get('enabled', False)
+        except ImportError:
+            self.logger.error("ConfigManager not available")
+            self.config = {'enabled': False}
+            self.cache_enabled = False
         
-        if config:
-            self.config.update(config)
+        self.default_ttl = self.config.get('ttl', 3600)
         
-        self.default_ttl = 3600  # 1 hour
-        self._connect()
+        # Connect if cache is enabled and Redis is available
+        if self.cache_enabled:
+            self._connect()
     
     def _connect(self) -> bool:
+        """
+        Establish cache connection based on configuration
+        
+        Returns:
+            bool: True if connection successful
+        """
+        if not self.cache_enabled:
+            return False
+            
+        cache_type = self.config.get('type', 'smf')
+        
+        # For 'smf' type, we check if Redis is available and configured
+        if cache_type == 'smf':
+            # SMF cache type means we use whatever SMF is configured to use
+            # If Redis connection details are provided, we attempt Redis connection
+            if REDIS_AVAILABLE and self.config.get('host') and self.config.get('port'):
+                return self._connect_redis()
+            else:
+                self.logger.info("SMF cache type configured but Redis not available or not configured")
+                return False
+        elif cache_type == 'redis':
+            return self._connect_redis()
+        else:
+            self.logger.warning(f"Unsupported cache type: {cache_type}")
+            return False
+    
+    def _connect_redis(self) -> bool:
         """
         Establish Redis connection
         
@@ -83,12 +110,12 @@ class SphinxAICache:
                 host=self.config['host'],
                 port=self.config['port'],
                 password=self.config['password'],
-                db=self.config['db'],
-                socket_timeout=self.config['socket_timeout'],
-                socket_connect_timeout=self.config['socket_connect_timeout'],
-                decode_responses=self.config['decode_responses'],
-                retry_on_timeout=self.config['retry_on_timeout'],
-                health_check_interval=self.config['health_check_interval']
+                db=self.config['database'],
+                socket_timeout=2.0,
+                socket_connect_timeout=2.0,
+                decode_responses=True,
+                retry_on_timeout=True,
+                health_check_interval=30
             )
             
             self.redis_client = redis.Redis(connection_pool=pool)
@@ -106,8 +133,8 @@ class SphinxAICache:
             return False
     
     def is_available(self) -> bool:
-        """Check if Redis is available and connected"""
-        return self.is_connected and self.redis_client is not None
+        """Check if cache is available and connected"""
+        return self.cache_enabled and self.is_connected and self.redis_client is not None
     
     def _get_cache_key(self, cache_type: str, key: str) -> str:
         """

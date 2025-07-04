@@ -56,11 +56,13 @@ index_interval = 3600
 full_reindex_interval = 86400
 
 [cache]
-# Redis cache settings
+# Cache settings (uses SMF cache API)
 enabled = true
+type = smf
 host = localhost
 port = 6379
 database = 0
+prefix = smf_sphinxai_
 ttl = 3600
 max_size = 1000
 

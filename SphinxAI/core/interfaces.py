@@ -27,12 +27,12 @@ class SearchHandler(ABC):
         Returns:
             List of search results
         """
-        pass
+        ...
 
     @abstractmethod
     def get_status(self) -> Dict[str, Any]:
         """Get handler status information."""
-        pass
+        ...
 
 
 class AIHandler(ABC):
@@ -49,7 +49,7 @@ class AIHandler(ABC):
         Returns:
             Embeddings array or None if failed
         """
-        pass
+        ...
 
     @abstractmethod
     def calculate_similarity(
@@ -67,7 +67,7 @@ class AIHandler(ABC):
         Returns:
             Similarity scores or None if failed
         """
-        pass
+        ...
 
     @abstractmethod
     def generate_summary(self, query: str, content: str, max_length: int = 200) -> str:
@@ -82,7 +82,7 @@ class AIHandler(ABC):
         Returns:
             Generated summary
         """
-        pass
+        ...
 
     @abstractmethod
     def preprocess_text(self, text: str) -> str:
@@ -95,12 +95,12 @@ class AIHandler(ABC):
         Returns:
             Preprocessed text
         """
-        pass
+        ...
 
     @abstractmethod
     def get_model_info(self) -> Dict[str, Any]:
         """Get model information and status."""
-        pass
+        ...
 
 
 class TextProcessor(ABC):
@@ -109,22 +109,22 @@ class TextProcessor(ABC):
     @abstractmethod
     def normalize_diacritics(self, text: str) -> str:
         """Normalize diacritics in text."""
-        pass
+        ...
 
     @abstractmethod
     def remove_stopwords(self, words: List[str]) -> List[str]:
         """Remove stopwords from word list."""
-        pass
+        ...
 
     @abstractmethod
     def clean_forum_content(self, text: str) -> str:
         """Clean forum-specific content."""
-        pass
+        ...
 
     @abstractmethod
     def preprocess_text(self, text: str, normalize_diacritics: bool = True) -> str:
         """Complete text preprocessing pipeline."""
-        pass
+        ...
 
 
 class ModelConverter(ABC):
@@ -133,22 +133,22 @@ class ModelConverter(ABC):
     @abstractmethod
     def download_model(self, model_name: str, output_dir: str) -> bool:
         """Download model from repository."""
-        pass
+        ...
 
     @abstractmethod
     def convert_model(self, input_path: str, output_path: str) -> bool:
         """Convert model to target format."""
-        pass
+        ...
 
     @abstractmethod
     def compress_model(self, model_path: str, output_path: str) -> bool:
         """Compress model for optimization."""
-        pass
+        ...
 
     @abstractmethod
     def verify_model(self, model_path: str) -> bool:
         """Verify model integrity and functionality."""
-        pass
+        ...
 
 
 class ConfigurationManager(ABC):
@@ -157,17 +157,17 @@ class ConfigurationManager(ABC):
     @abstractmethod
     def load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from file."""
-        pass
+        ...
 
     @abstractmethod
     def save_config(self, config: Dict[str, Any], config_path: str) -> bool:
         """Save configuration to file."""
-        pass
+        ...
 
     @abstractmethod
     def validate_config(self, config: Dict[str, Any]) -> bool:
         """Validate configuration values."""
-        pass
+        ...
 
 
 class Logger(ABC):
@@ -176,22 +176,22 @@ class Logger(ABC):
     @abstractmethod
     def log_info(self, message: str) -> None:
         """Log info message."""
-        pass
+        ...
 
     @abstractmethod
     def log_warning(self, message: str) -> None:
         """Log warning message."""
-        pass
+        ...
 
     @abstractmethod
     def log_error(self, message: str) -> None:
         """Log error message."""
-        pass
+        ...
 
     @abstractmethod
     def log_debug(self, message: str) -> None:
         """Log debug message."""
-        pass
+        ...
 
 
 # Result data classes for type safety
@@ -200,15 +200,16 @@ class SearchResult:
 
     def __init__(
         self,
-        id: str,
+        result_id: str,
         title: str,
         content: str,
         url: str,
+        *,  # Force keyword-only arguments
         relevance_score: float = 0.0,
         ai_summary: str = "",
         metadata: Optional[Dict[str, Any]] = None
     ):
-        self.id = id
+        self.id = result_id
         self.title = title
         self.content = content
         self.url = url

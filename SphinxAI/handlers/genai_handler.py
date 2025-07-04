@@ -10,9 +10,12 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import numpy as np
+from numpy.typing import NDArray
+
 from ..core.interfaces import AIHandler
 from ..core.constants import POLISH_STOPWORDS, MAX_CONTEXT_LENGTH, MAX_SUMMARY_LENGTH, MAX_ANSWER_LENGTH
-from ..utils.text_processing import normalize_polish_text
+from ..utils.text_processing import normalize_polish_text, remove_stopwords
 
 logger = logging.getLogger(__name__)
 

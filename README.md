@@ -304,15 +304,6 @@ We're always looking to improve! Submit feature requests via GitHub Issues with 
 
 **Made with ❤️ for the SMF community**
 
-3. Set up Sphinx search daemon configuration
-4. Run initial indexing
-
-### Step 4: Setup Sphinx Search
-1. Install Sphinx Search daemon
-2. Configure `/etc/sphinx/sphinx.conf` (use generated config)
-3. Start searchd daemon: `searchd --config /etc/sphinx/sphinx.conf`
-4. Run initial indexing: `indexer --config /etc/sphinx/sphinx.conf smf_posts`
-
 ## Configuration
 
 ### Plugin Settings
@@ -320,20 +311,6 @@ We're always looking to improve! Submit feature requests via GitHub Issues with 
 - **Max Results**: Maximum search results to return (1-100)
 - **Summary Length**: Maximum summary length in characters (50-500)
 - **Auto Indexing**: Automatically index new posts
-
-### Database Configuration
-Edit `SphinxAI/config.json`:
-```json
-{
-  "database_settings": {
-    "host": "localhost",
-    "port": 3306,
-    "database": "your_smf_database",
-    "user": "your_db_user",
-    "password": "your_db_password"
-  }
-}
-```
 
 ### Sphinx Configuration
 The plugin generates a Sphinx configuration file. Key settings:
@@ -391,8 +368,7 @@ pip install -r requirements.txt
 **Sphinx daemon not running**
 ```bash
 sudo systemctl start sphinxsearch
-# or
-searchd --config /etc/sphinx/sphinx.conf
+# or check your installation guide for specific commands
 ```
 
 **No search results**
@@ -408,7 +384,7 @@ searchd --config /etc/sphinx/sphinx.conf
 ### Error Messages
 - **Model not found**: Check model path in settings
 - **Python not found**: Ensure Python 3.8+ is installed
-- **Dependencies missing**: Run setup.py again
+- **Dependencies missing**: Re-run the installation script or check the Installation Guide
 - **Index empty**: Run initial indexing
 
 ## Performance Optimization
@@ -440,12 +416,21 @@ searchd --config /etc/sphinx/sphinx.conf
 ### File Structure
 ```
 SphinxAI/
-├── search_processor.py     # Main AI processing
-├── sphinx_integration.py   # Sphinx daemon integration
-├── openvino_handler.py     # OpenVINO model handling
-├── requirements.txt        # Python dependencies
-├── setup.py               # Installation script
-├── config.json            # Configuration file
+├── core/                   # Core functionality
+│   ├── constants.py        # Core constants and configuration
+│   ├── interfaces.py       # Abstract base classes and interfaces
+│   └── search_coordinator.py # Main search coordination
+├── handlers/               # AI model handlers
+│   ├── genai_handler.py    # OpenVINO GenAI model handling
+│   └── sphinx_handler.py   # Sphinx daemon integration
+├── utils/                  # Utility modules
+│   ├── cache.py           # Redis caching implementation
+│   ├── config_manager.py  # Configuration management
+│   ├── model_utils.py     # Model utilities
+│   └── text_processing.py # Text processing and normalization
+├── main.py                # Main entry point
+├── requirements.txt       # Python dependencies
+├── setup.py              # Installation script
 └── logs/                  # Log files
 ```
 

@@ -13,8 +13,7 @@ import pytest
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
-from SphinxAI.utils.config_manager import ConfigManager
-
+# SphinxAI imports after path setup
 from SphinxAI.utils.config_manager import ConfigManager
 
 
@@ -92,7 +91,7 @@ class TestConfigManager:
             manager = ConfigManager(f.name)
             db_config = manager.get_database_config()
 
-            assert db_config == {}
+            assert not db_config
 
             os.unlink(f.name)
 

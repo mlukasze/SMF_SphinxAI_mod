@@ -18,7 +18,6 @@ from core.constants import (
     VERSION, PLUGIN_NAME, config_manager
 )
 from handlers.sphinx_handler import SphinxSearchHandler
-from handlers.openvino_handler import OpenVINOHandler
 from handlers.genai_handler import GenAIHandler
 
 # Configure logging
@@ -71,19 +70,8 @@ def setup_handlers(config: Dict[str, Any]) -> Dict[str, Any]:
     # Setup AI handlers based on availability
     ai_config = config.get('ai', {})
 
-    # OpenVINO handler
-    openvino_model_path = ai_config.get('openvino_model_path')
-    if openvino_model_path:
-        openvino_handler = OpenVINOHandler(
-            model_path=openvino_model_path,
-            device=ai_config.get('device', 'CPU')
-        )
-        if openvino_handler.is_available():
-            handlers['openvino'] = openvino_handler
-            logger.info("OpenVINO handler initialized")
-
-    # GenAI handler
-    genai_model_path = ai_config.get('genai_model_path')
+    # GenAI handler (replaces the old OpenVINO handler)
+    genai_model_path = ai_config.get('genai_model_path') or ai_config.get('openvino_model_path')
     if genai_model_path:
         genai_handler = GenAIHandler(
             model_path=genai_model_path,

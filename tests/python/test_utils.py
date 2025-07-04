@@ -12,6 +12,7 @@ import pytest
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
+# SphinxAI imports after path setup
 from SphinxAI.utils.cache import SphinxAICache, redis_available
 from SphinxAI.utils.config_manager import ConfigManager
 from SphinxAI.core import constants

@@ -82,7 +82,7 @@ SMF_SphinxAI_mod/
 │   │   └── search_coordinator.py
 │   ├── handlers/                 # AI model handlers
 │   │   ├── __init__.py
-│   │   ├── openvino_handler.py
+│   │   ├── genai_handler.py
 │   │   ├── genai_handler.py
 │   │   └── sphinx_handler.py
 │   ├── utils/                    # Utility modules

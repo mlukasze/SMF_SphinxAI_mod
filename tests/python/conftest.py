@@ -2,12 +2,14 @@
 Shared test fixtures and utilities for SphinxAI tests
 """
 
-import pytest
-import tempfile
-import os
 import configparser
+import os
+import tempfile
 from pathlib import Path
 from typing import Dict, Any
+from unittest.mock import MagicMock
+
+import pytest
 
 
 @pytest.fixture
@@ -151,3 +153,47 @@ def sample_model_data():
         'max_length': 512,
         'last_updated': '2024-01-01T00:00:00Z'
     }
+
+
+def setup_mock_cache_with_redis(cache_config=None):
+    """
+    Helper function to set up a SphinxAICache instance with a mock Redis client.
+    
+    Args:
+        cache_config: Optional cache configuration dict. Defaults to {'prefix': 'test_'}
+    
+    Returns:
+        tuple: (cache_instance, mock_redis_client)
+    """
+    from SphinxAI.utils.cache import SphinxAICache
+    
+    mock_redis_client = MagicMock()
+    
+    cache = SphinxAICache()
+    cache.cache_enabled = True
+    cache.is_connected = True
+    cache.redis_client = mock_redis_client
+    cache.config = cache_config or {'prefix': 'test_'}
+    
+    return cache, mock_redis_client
+
+
+def setup_mock_cache_disconnected(cache_config=None):
+    """
+    Helper function to set up a SphinxAICache instance without Redis connection.
+    
+    Args:
+        cache_config: Optional cache configuration dict. Defaults to {'prefix': 'test_'}
+    
+    Returns:
+        SphinxAICache: cache instance configured as disconnected
+    """
+    from SphinxAI.utils.cache import SphinxAICache
+    
+    cache = SphinxAICache()
+    cache.cache_enabled = True
+    cache.is_connected = False
+    cache.redis_client = None
+    cache.config = cache_config or {'prefix': 'test_'}
+    
+    return cache

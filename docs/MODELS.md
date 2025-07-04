@@ -201,10 +201,10 @@ python SphinxAI/main.py benchmark-models
 
 # Test inference speed
 python -c "
-from SphinxAI.handlers.openvino_handler import OpenVINOHandler
-handler = OpenVINOHandler('SphinxAI/models/openvino/all-MiniLM-L6-v2')
-result = handler.encode(['test sentence'])
-print(f'Inference successful: {len(result[0])} dimensions')
+from SphinxAI.handlers.genai_handler import GenAIHandler
+handler = GenAIHandler('SphinxAI/models/openvino/all-MiniLM-L6-v2')
+embeddings = handler.generate_embeddings(['test sentence'])
+print(f'Inference successful: {len(embeddings[0])} dimensions')
 "
 ```
 
@@ -366,10 +366,10 @@ Test model functionality:
 ```bash
 # Test embedding model
 python -c "
-from SphinxAI.handlers.openvino_handler import OpenVINOHandler
-handler = OpenVINOHandler('SphinxAI/models/openvino/all-MiniLM-L6-v2')
-result = handler.encode(['Hello world', 'Test sentence'])
-print(f'Embeddings shape: {len(result)}x{len(result[0])}')
+from SphinxAI.handlers.genai_handler import GenAIHandler
+handler = GenAIHandler('SphinxAI/models/openvino/all-MiniLM-L6-v2')
+embeddings = handler.generate_embeddings(['Hello world', 'Test sentence'])
+print(f'Embeddings shape: {len(embeddings)}x{len(embeddings[0])}')
 "
 
 # Test similarity calculation

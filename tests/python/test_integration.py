@@ -12,6 +12,7 @@ import pytest
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
+# SphinxAI imports after path setup
 from SphinxAI.utils.cache import SphinxAICache
 from SphinxAI.utils.config_manager import ConfigManager
 
@@ -158,14 +159,9 @@ class TestErrorRecovery:
 
     def test_cache_recovery_after_connection_loss(self):
         """Test cache behavior when connection is lost and restored"""
+        from .conftest import setup_mock_cache_with_redis
 
-        mock_redis_client = MagicMock()
-
-        cache = SphinxAICache()
-        cache.cache_enabled = True
-        cache.is_connected = True
-        cache.redis_client = mock_redis_client
-        cache.config = {'prefix': 'test_'}
+        cache, mock_redis_client = setup_mock_cache_with_redis()
 
         # Simulate connection loss
         mock_redis_client.setex.side_effect = ConnectionError("Connection lost")

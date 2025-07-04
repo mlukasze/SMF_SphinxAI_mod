@@ -261,7 +261,7 @@ class TextChunker:
         for i in range(end - 1, start - 1, -1):
             if text[i] in sentence_endings:
                 # Make sure it's not a decimal number
-                if text[i] == '.' and i > 0 and i < len(text) - 1:
+                if text[i] == '.' and 0 < i < len(text) - 1:
                     if text[i-1].isdigit() and text[i+1].isdigit():
                         continue
                 return i + 1
@@ -296,14 +296,21 @@ def create_chunker(max_chunk_size: int = 1000, overlap: int = 100) -> TextChunke
     return TextChunker(max_chunk_size, overlap)
 
 # Standalone utility functions for backward compatibility
-_default_processor = None
+
+class _DefaultProcessor:
+    """Singleton pattern for default processor to avoid global statement."""
+    _instance = None
+    
+    @classmethod
+    def get_instance(cls) -> PolishTextProcessor:
+        """Get default text processor instance."""
+        if cls._instance is None:
+            cls._instance = PolishTextProcessor()
+        return cls._instance
 
 def get_default_processor() -> PolishTextProcessor:
     """Get default text processor instance."""
-    global _default_processor
-    if _default_processor is None:
-        _default_processor = PolishTextProcessor()
-    return _default_processor
+    return _DefaultProcessor.get_instance()
 
 
 def normalize_polish_text(text: str) -> str:

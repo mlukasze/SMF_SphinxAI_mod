@@ -14,6 +14,7 @@ import pytest
 # Add the project root to Python path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
+# SphinxAI imports after path setup
 from SphinxAI.utils.cache import SphinxAICache, cached_search, get_cache_instance
 
 
@@ -136,14 +137,10 @@ class TestSphinxAICache:
 
     def test_cache_search_results_success(self, sample_search_results):
         """Test successful search results caching"""
-        mock_redis_client = MagicMock()
+        from .conftest import setup_mock_cache_with_redis
+        
+        cache, mock_redis_client = setup_mock_cache_with_redis()
         mock_redis_client.setex.return_value = True
-
-        cache = SphinxAICache()
-        cache.cache_enabled = True
-        cache.is_connected = True
-        cache.redis_client = mock_redis_client
-        cache.config = {'prefix': 'test_'}
 
         result = cache.cache_search_results(
             query='test query',
@@ -417,13 +414,9 @@ class TestSphinxAICache:
 
     def test_record_cache_hit(self):
         """Test recording cache hit"""
-        mock_redis_client = MagicMock()
-
-        cache = SphinxAICache()
-        cache.cache_enabled = True
-        cache.is_connected = True
-        cache.redis_client = mock_redis_client
-        cache.config = {'prefix': 'test_'}
+        from .conftest import setup_mock_cache_with_redis
+        
+        cache, mock_redis_client = setup_mock_cache_with_redis()
 
         cache.record_cache_hit()
 

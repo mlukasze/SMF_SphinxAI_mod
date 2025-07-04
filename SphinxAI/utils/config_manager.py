@@ -65,7 +65,7 @@ class ConfigManager:
             return {'enabled': False}
         
         cache_section = self.config['cache']
-        config = {
+        cache_config: Dict[str, Any] = {
             'enabled': cache_section.getboolean('enabled', False),
             'type': cache_section.get('type', 'smf'),
             'host': cache_section.get('host', '127.0.0.1'),
@@ -79,9 +79,9 @@ class ConfigManager:
         password = cache_section.get('password', None)
         if password == '':
             password = None
-        config['password'] = password
+        cache_config['password'] = password
         
-        return config
+        return cache_config
     
     def get_model_config(self) -> Dict[str, Any]:
         """Get model configuration"""

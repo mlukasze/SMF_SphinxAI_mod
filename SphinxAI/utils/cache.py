@@ -11,16 +11,23 @@ import json
 import hashlib
 import logging
 import time
-import configparser
-import os
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 from functools import wraps
 
+# Import redis with proper type checking
+if TYPE_CHECKING:
+    import redis
+    RedisClient = redis.Redis[bytes]
+else:
+    RedisClient = Any
+
+# Try to import redis at runtime
+redis_available = True
+redis = None
 try:
     import redis
-    REDIS_AVAILABLE = True
 except ImportError:
-    REDIS_AVAILABLE = False
+    redis_available = False
     logging.warning("Redis module not available. Caching will be disabled.")
 
 
@@ -44,7 +51,7 @@ class SphinxAICache:
         Args:
             config_path: Path to configuration file
         """
-        self.redis_client = None
+        self.redis_client: Optional[Any] = None
         self.is_connected = False
         self.cache_enabled = False
         self.logger = logging.getLogger(__name__)
@@ -82,7 +89,7 @@ class SphinxAICache:
         if cache_type == 'smf':
             # SMF cache type means we use whatever SMF is configured to use
             # If Redis connection details are provided, we attempt Redis connection
-            if REDIS_AVAILABLE and self.config.get('host') and self.config.get('port'):
+            if redis_available and self.config.get('host') and self.config.get('port'):
                 return self._connect_redis()
             else:
                 self.logger.info("SMF cache type configured but Redis not available or not configured")
@@ -100,13 +107,13 @@ class SphinxAICache:
         Returns:
             bool: True if connection successful
         """
-        if not REDIS_AVAILABLE:
+        if not redis_available or redis is None:
             self.logger.warning("Redis not available, caching disabled")
             return False
         
         try:
             # Create Redis connection pool
-            pool = redis.ConnectionPool(
+            pool = redis.ConnectionPool(  # type: ignore
                 host=self.config['host'],
                 port=self.config['port'],
                 password=self.config['password'],
@@ -118,10 +125,10 @@ class SphinxAICache:
                 health_check_interval=30
             )
             
-            self.redis_client = redis.Redis(connection_pool=pool)
+            self.redis_client = redis.Redis(connection_pool=pool)  # type: ignore
             
             # Test connection
-            self.redis_client.ping()
+            self.redis_client.ping()  # type: ignore
             self.is_connected = True
             
             self.logger.info("Successfully connected to Redis")
@@ -173,7 +180,7 @@ class SphinxAICache:
         if not self.is_available():
             return False
         
-        key_data = {
+        key_data: Dict[str, Any] = {
             'query': query,
             'filters': filters,
             'version': self._get_search_version()
@@ -181,7 +188,7 @@ class SphinxAICache:
         
         cache_key = self._get_cache_key('search', json.dumps(key_data, sort_keys=True))
         
-        data = {
+        data: Dict[str, Any] = {
             'query': query,
             'filters': filters,
             'results': results,
@@ -191,7 +198,7 @@ class SphinxAICache:
         
         try:
             ttl = ttl or self.default_ttl
-            return self.redis_client.setex(
+            return self.redis_client.setex(  # type: ignore
                 cache_key,
                 ttl,
                 json.dumps(data, ensure_ascii=False)
@@ -218,7 +225,7 @@ class SphinxAICache:
         if not self.is_available():
             return None
         
-        key_data = {
+        key_data: Dict[str, Any] = {
             'query': query,
             'filters': filters,
             'version': self._get_search_version()
@@ -227,12 +234,12 @@ class SphinxAICache:
         cache_key = self._get_cache_key('search', json.dumps(key_data, sort_keys=True))
         
         try:
-            cached = self.redis_client.get(cache_key)
+            cached = self.redis_client.get(cache_key)  # type: ignore
             if cached is None:
                 self.record_cache_miss()
                 return None
             
-            data = json.loads(cached)
+            data = json.loads(cached)  # type: ignore
             self.record_cache_hit()
             return data
             
@@ -265,7 +272,7 @@ class SphinxAICache:
         key_data = f"{model_id}:{text}"
         cache_key = self._get_cache_key('embeddings', key_data)
         
-        data = {
+        data: Dict[str, Any] = {
             'text': text,
             'embeddings': embeddings,
             'model_id': model_id,
@@ -274,7 +281,7 @@ class SphinxAICache:
         
         try:
             ttl = ttl or (24 * 3600)  # 24 hours for embeddings
-            return self.redis_client.setex(
+            return self.redis_client.setex(  # type: ignore
                 cache_key,
                 ttl,
                 json.dumps(data)
@@ -305,11 +312,11 @@ class SphinxAICache:
         cache_key = self._get_cache_key('embeddings', key_data)
         
         try:
-            cached = self.redis_client.get(cache_key)
+            cached = self.redis_client.get(cache_key)  # type: ignore
             if cached is None:
                 return None
             
-            data = json.loads(cached)
+            data = json.loads(cached)  # type: ignore
             return data.get('embeddings')
             
         except (json.JSONDecodeError, Exception) as e:
@@ -340,7 +347,7 @@ class SphinxAICache:
         ttl = ttl or (24 * 3600)  # 24 hours for model metadata
         
         try:
-            return self.redis_client.setex(
+            return self.redis_client.setex(  # type: ignore
                 cache_key,
                 ttl,
                 json.dumps(metadata, ensure_ascii=False)
@@ -365,11 +372,11 @@ class SphinxAICache:
         cache_key = self._get_cache_key('model', model_id)
         
         try:
-            cached = self.redis_client.get(cache_key)
+            cached = self.redis_client.get(cache_key)  # type: ignore
             if cached is None:
                 return None
             
-            return json.loads(cached)
+            return json.loads(cached)  # type: ignore
             
         except (json.JSONDecodeError, Exception) as e:
             self.logger.error(f"Failed to retrieve cached model metadata: {e}")
@@ -396,29 +403,29 @@ class SphinxAICache:
             return False
         
         try:
-            pipe = self.redis_client.pipeline()
+            pipe = self.redis_client.pipeline()  # type: ignore
             
             # Increment search count
-            pipe.incr(f"{self.config['prefix']}stats:search_count")
+            pipe.incr(f"{self.config['prefix']}stats:search_count")  # type: ignore
             
             # Track popular queries
-            pipe.zincrby(f"{self.config['prefix']}stats:popular_queries", 1, query)
+            pipe.zincrby(f"{self.config['prefix']}stats:popular_queries", 1, query)  # type: ignore
             
             # Track response times (keep last 1000 entries)
-            pipe.lpush(f"{self.config['prefix']}stats:response_times", response_time)
-            pipe.ltrim(f"{self.config['prefix']}stats:response_times", 0, 999)
+            pipe.lpush(f"{self.config['prefix']}stats:response_times", response_time)  # type: ignore
+            pipe.ltrim(f"{self.config['prefix']}stats:response_times", 0, 999)  # type: ignore
             
             # Track result counts
-            pipe.lpush(f"{self.config['prefix']}stats:result_counts", result_count)
-            pipe.ltrim(f"{self.config['prefix']}stats:result_counts", 0, 999)
+            pipe.lpush(f"{self.config['prefix']}stats:result_counts", result_count)  # type: ignore
+            pipe.ltrim(f"{self.config['prefix']}stats:result_counts", 0, 999)  # type: ignore
             
             # Daily stats
             today = time.strftime('%Y-%m-%d')
             daily_key = f"{self.config['prefix']}stats:daily:{today}:searches"
-            pipe.incr(daily_key)
-            pipe.expire(daily_key, 30 * 24 * 3600)  # Keep for 30 days
+            pipe.incr(daily_key)  # type: ignore
+            pipe.expire(daily_key, 30 * 24 * 3600)  # type: ignore  # Keep for 30 days
             
-            pipe.execute()
+            pipe.execute()  # type: ignore
             return True
             
         except Exception as e:
@@ -436,14 +443,14 @@ class SphinxAICache:
             return {}
         
         try:
-            pipe = self.redis_client.pipeline()
+            pipe = self.redis_client.pipeline()  # type: ignore
             
-            pipe.get(f"{self.config['prefix']}stats:search_count")
-            pipe.zrevrange(f"{self.config['prefix']}stats:popular_queries", 0, 9, withscores=True)
-            pipe.lrange(f"{self.config['prefix']}stats:response_times", 0, 99)
-            pipe.lrange(f"{self.config['prefix']}stats:result_counts", 0, 99)
+            pipe.get(f"{self.config['prefix']}stats:search_count")  # type: ignore
+            pipe.zrevrange(f"{self.config['prefix']}stats:popular_queries", 0, 9, withscores=True)  # type: ignore
+            pipe.lrange(f"{self.config['prefix']}stats:response_times", 0, 99)  # type: ignore
+            pipe.lrange(f"{self.config['prefix']}stats:result_counts", 0, 99)  # type: ignore
             
-            results = pipe.execute()
+            results = pipe.execute()  # type: ignore
             
             response_times = [float(x) for x in results[2] if x]
             result_counts = [int(x) for x in results[3] if x]
@@ -463,8 +470,8 @@ class SphinxAICache:
     def _get_cache_hit_rate(self) -> float:
         """Calculate cache hit rate"""
         try:
-            hits = int(self.redis_client.get(f"{self.config['prefix']}stats:cache_hits") or 0)
-            misses = int(self.redis_client.get(f"{self.config['prefix']}stats:cache_misses") or 0)
+            hits = int(self.redis_client.get(f"{self.config['prefix']}stats:cache_hits") or 0)  # type: ignore
+            misses = int(self.redis_client.get(f"{self.config['prefix']}stats:cache_misses") or 0)  # type: ignore
             total = hits + misses
             
             return (hits / total) * 100 if total > 0 else 0
@@ -476,7 +483,7 @@ class SphinxAICache:
         """Increment cache hit counter"""
         if self.is_available():
             try:
-                self.redis_client.incr(f"{self.config['prefix']}stats:cache_hits")
+                self.redis_client.incr(f"{self.config['prefix']}stats:cache_hits")  # type: ignore
             except Exception:
                 pass  # Ignore errors for stats
     
@@ -484,7 +491,7 @@ class SphinxAICache:
         """Increment cache miss counter"""
         if self.is_available():
             try:
-                self.redis_client.incr(f"{self.config['prefix']}stats:cache_misses")
+                self.redis_client.incr(f"{self.config['prefix']}stats:cache_misses")  # type: ignore
             except Exception:
                 pass  # Ignore errors for stats
     
@@ -503,11 +510,11 @@ class SphinxAICache:
         
         try:
             full_pattern = f"{self.config['prefix']}{pattern}"
-            keys = self.redis_client.keys(full_pattern)
+            keys = self.redis_client.keys(full_pattern)  # type: ignore
             if not keys:
                 return 0
             
-            return self.redis_client.delete(*keys)
+            return self.redis_client.delete(*keys)  # type: ignore
             
         except Exception as e:
             self.logger.error(f"Failed to clear cache: {e}")
@@ -537,7 +544,7 @@ class SphinxAICache:
         """Close Redis connection"""
         if self.redis_client:
             try:
-                self.redis_client.close()
+                self.redis_client.close()  # type: ignore
             except Exception:
                 pass  # Ignore close errors
             
@@ -547,21 +554,21 @@ class SphinxAICache:
         """Context manager entry"""
         return self
     
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[Exception], exc_tb: Optional[Any]) -> None:
         """Context manager exit"""
         self.close()
 
 
-def cached_search(ttl: int = 3600):
+def cached_search(ttl: int = 3600):  # type: ignore
     """
     Decorator for caching search function results
     
     Args:
         ttl: Time to live in seconds
     """
-    def decorator(func):
+    def decorator(func):  # type: ignore
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             cache = SphinxAICache()
             
             if not cache.is_available():
@@ -573,11 +580,11 @@ def cached_search(ttl: int = 3600):
             ).hexdigest()
             
             # Try to get from cache
-            cached_result = cache.redis_client.get(f"func:{func.__name__}:{cache_key}")
+            cached_result = cache.redis_client.get(f"func:{func.__name__}:{cache_key}")  # type: ignore
             if cached_result is not None:
                 try:
                     cache.record_cache_hit()
-                    return json.loads(cached_result)
+                    return json.loads(cached_result)  # type: ignore
                 except json.JSONDecodeError:
                     pass
             
@@ -585,7 +592,7 @@ def cached_search(ttl: int = 3600):
             result = func(*args, **kwargs)
             
             try:
-                cache.redis_client.setex(
+                cache.redis_client.setex(  # type: ignore
                     f"func:{func.__name__}:{cache_key}",
                     ttl,
                     json.dumps(result, default=str)
@@ -603,11 +610,11 @@ def cached_search(ttl: int = 3600):
 # Global cache instance
 _cache_instance = None
 
-def get_cache_instance(config: Optional[Dict[str, Any]] = None) -> SphinxAICache:
+def get_cache_instance(config_path: Optional[str] = None) -> SphinxAICache:
     """Get global cache instance"""
     global _cache_instance
     
     if _cache_instance is None:
-        _cache_instance = SphinxAICache(config)
+        _cache_instance = SphinxAICache(config_path)
     
     return _cache_instance

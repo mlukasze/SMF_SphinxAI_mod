@@ -1,5 +1,17 @@
 # Sphinx AI Search for SMF
 
+[![Tests](https://github.com/username/smf-sphinx-ai-search/actions/workflows/tests.yml/badge.svg)](https://github.com/username/smf-sphinx-ai-search/actions/workflows/tests.yml)
+[![Coverage](https://codecov.io/gh/username/smf-sphinx-ai-search/branch/main/graph/badge.svg)](https://codecov.io/gh/username/smf-sphinx-ai-search)
+[![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
+[![PHP](https://img.shields.io/badge/php-7.4%2B-blue.svg)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![SMF](https://img.shields.io/badge/SMF-2.1%2B-orange.svg)](https://www.simplemachines.org/)
+
+[![Redis](https://img.shields.io/badge/redis-6.0%2B-red.svg)](https://redis.io/)
+[![Sphinx](https://img.shields.io/badge/sphinx-3.0%2B-purple.svg)](https://sphinxsearch.com/)
+[![OpenVINO](https://img.shields.io/badge/openvino-2023.0%2B-blue.svg)](https://openvino.ai/)
+[![Transformers](https://img.shields.io/badge/transformers-4.21%2B-yellow.svg)](https://huggingface.co/transformers/)
+
 > **⚠️ ALPHA SOFTWARE WARNING ⚠️**
 > 
 > **This project is currently in ALPHA stage and is NOT ready for production use.**

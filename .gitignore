@@ -582,3 +582,19 @@ target/
 # Runtime directories
 run/
 var/run/
+
+# Test artifacts and dependencies
+tests/vendor/
+tests/reports/
+tests/coverage/
+tests/.phpunit.result.cache
+tests/phpunit.xml.bak
+
+# Python test artifacts  
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+.cache

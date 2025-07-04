@@ -33,7 +33,7 @@ class SphinxAIInstallHandler
 	/**
 	 * Required PHP version
 	 */
-	public const REQUIRED_PHP_VERSION = '7.4.0';
+	public const REQUIRED_PHP_VERSION = '8.1.0';
 
 	/**
 	 * Required SMF version

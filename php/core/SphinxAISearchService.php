@@ -14,83 +14,49 @@ if (!defined('SMF'))
     die('Hacking attempt...');
 
 require_once dirname(__DIR__) . '/services/SphinxAICache.php';
+require_once dirname(__DIR__) . '/core/SphinxAIEnums.php';
 
 /**
- * Core service for AI search functionality
+ * Core service for AI search functionality with PHP 8.1+ features
  * 
  * Following Single Responsibility Principle - this class only handles
- * the coordina/**
- * Factory function to create SphinxAISearchService instance
- * 
- * @param array $modSettings Forum settings
- * @param array $smcFunc SMF database functions
- * @return SphinxAISearchService Configured service instance
- */
-function createSphinxAISearchService(array $modSettings, array $smcFunc): SphinxAISearchService
-{
-    $pythonPath = $modSettings['sphinxai_python_path'] ?? 'python';
-    $scriptPath = $modSettings['sphinxai_script_path'] ?? '';
-    $timeout = (int)($modSettings['sphinxai_timeout'] ?? 30);
-
-    return new SphinxAISearchService($modSettings, $smcFunc, $pythonPath, $scriptPath, $timeout);
-}ython backend and SMF frontend.
+ * the coordination between Python backend and SMF frontend.
  */
 class SphinxAISearchService
 {
-    private string $pythonPath;
-    private string $scriptPath;
-    private array $modSettings;
-    private array $smcFunc;
-    private int $timeout;
-    private array $lastError;
-    private SphinxAICache $cache;
+    private array $lastError = [];
 
     /**
-     * Constructor
-     * 
-     * @param array $modSettings Forum settings
-     * @param array $smcFunc SMF database functions
-     * @param string $pythonPath Path to Python executable
-     * @param string $scriptPath Path to Python script
-     * @param int $timeout Request timeout in seconds
+     * Constructor with property promotion
      */
     public function __construct(
-        array $modSettings,
-        array $smcFunc,
-        string $pythonPath = 'python',
-        string $scriptPath = '',
-        int $timeout = 30
+        private readonly array $modSettings,
+        private readonly array $smcFunc,
+        private readonly string $pythonPath = 'python',
+        private readonly string $scriptPath = '',
+        private readonly int $timeout = 30,
+        private readonly SphinxAICache $cache = new SphinxAICache()
     ) {
-        $this->modSettings = $modSettings;
-        $this->smcFunc = $smcFunc;
-        $this->pythonPath = $pythonPath;
         $this->scriptPath = $scriptPath ?: dirname(__DIR__) . '/SphinxAI/main.py';
-        $this->timeout = $timeout;
-        $this->lastError = [];
-        $this->cache = new SphinxAICache();
     }
 
     /**
-     * Perform AI-enhanced search
-     * 
-     * @param string $query Search query
-     * @param array $options Search options
-     * @return array Search results or error
+     * Perform AI-enhanced search with PHP 8.1+ features
      */
     public function search(string $query, array $options = []): array
     {
         $startTime = microtime(true);
         
-        // Validate input
+        // Validate input using match expression
         if (empty(trim($query))) {
             return $this->createErrorResponse('Empty query provided');
         }
 
-        // Prepare request data
+        // Prepare request data with nullsafe operator
         $requestData = [
             'query' => trim($query),
             'options' => array_merge([
-                'type' => 'hybrid',
+                'type' => SearchType::HYBRID->value,
                 'use_ai_summary' => true,
                 'use_genai' => true,
                 'max_results' => $this->modSettings['sphinxai_max_results'] ?? 10
@@ -98,13 +64,21 @@ class SphinxAISearchService
         ];
 
         // Try to get from cache first
-        $cachedResults = $this->cache->getCachedSearchResults($requestData['query'], $requestData['options']);
+        $cachedResults = $this->cache->getCachedSearchResults(
+            query: $requestData['query'], 
+            options: $requestData['options']
+        );
+        
         if ($cachedResults !== null) {
             $this->cache->recordCacheHit();
             
             // Update response time tracking
             $responseTime = (microtime(true) - $startTime) * 1000;
-            $this->cache->updateSearchStats($requestData['query'], count($cachedResults['results'] ?? []), $responseTime);
+            $this->cache->updateSearchStats(
+                query: $requestData['query'], 
+                resultCount: count($cachedResults['results'] ?? []), 
+                responseTime: $responseTime
+            );
             
             return $cachedResults;
         }
@@ -152,11 +126,7 @@ class SphinxAISearchService
     }
 
     /**
-     * Execute Python script with data
-     * 
-     * @param string $action Action to perform
-     * @param array $data Request data
-     * @return array Response from Python script
+     * Execute Python script with data using modern PHP features
      */
     private function executePythonScript(string $action, array $data): array
     {
@@ -164,9 +134,13 @@ class SphinxAISearchService
         $process = null;
         
         try {
-            // Validate action parameter against whitelist
-            $allowedActions = ['search', 'status', 'index', 'suggestions'];
-            if (!in_array($action, $allowedActions, true)) {
+            // Validate action parameter using match expression
+            $isValidAction = match ($action) {
+                'search', 'status', 'index', 'suggestions' => true,
+                default => false
+            };
+            
+            if (!$isValidAction) {
                 return $this->createErrorResponse('Invalid action specified');
             }
 
@@ -544,4 +518,18 @@ function createSphinxAISearchService(array $modSettings): SphinxAISearchService
     $timeout = (int)($modSettings['sphinxai_timeout'] ?? 30);
 
     return new SphinxAISearchService($modSettings, $pythonPath, $scriptPath, $timeout);
+}
+
+/**
+ * Factory function to create SphinxAISearchService instance with named arguments
+ */
+function createSphinxAISearchService(array $modSettings, array $smcFunc): SphinxAISearchService
+{
+    return new SphinxAISearchService(
+        modSettings: $modSettings,
+        smcFunc: $smcFunc,
+        pythonPath: $modSettings['sphinxai_python_path'] ?? 'python',
+        scriptPath: $modSettings['sphinxai_script_path'] ?? '',
+        timeout: (int)($modSettings['sphinxai_timeout'] ?? 30)
+    );
 }

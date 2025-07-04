@@ -30,7 +30,7 @@ class SphinxAIRequirementsChecker
 	 * Minimum requirements
 	 */
 	private const REQUIREMENTS = [
-		'php_version' => '7.4.0',
+		'php_version' => '8.1.0',
 		'smf_version' => '2.1.0',
 		'python_version' => '3.8.0',
 		'required_php_extensions' => ['json', 'curl', 'mbstring'],
@@ -121,7 +121,7 @@ class SphinxAIRequirementsChecker
 		if (version_compare(PHP_VERSION, self::REQUIREMENTS['php_version'], '<')) {
 			$status = false;
 			$messages[] = sprintf(
-				'PHP %s or higher is required. Current version: %s',
+				'PHP %s or higher is required (uses modern PHP features: enums, union types, constructor property promotion, readonly properties). Current version: %s',
 				self::REQUIREMENTS['php_version'],
 				PHP_VERSION
 			);

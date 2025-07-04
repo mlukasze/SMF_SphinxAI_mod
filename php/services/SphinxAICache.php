@@ -6,80 +6,58 @@
  * Uses SMF's built-in cache system (Redis, Memcached, or file-based)
  * 
  * @package SphinxAI
- * @version 1.0.0
+ * @version 2.0.0
  * @author SMF Sphinx AI Search Plugin
  */
+
+declare(strict_types=1);
 
 if (!defined('SMF')) {
     die('No direct access...');
 }
 
+require_once dirname(__DIR__) . '/core/SphinxAIEnums.php';
+
 class SphinxAICache
 {
-    /** @var bool Whether SMF cache is available */
-    private $isAvailable = false;
-    
-    /** @var int Default TTL in seconds (1 hour) */
-    private $defaultTtl = 3600;
-    
-    /** @var string Cache key prefix */
-    private $prefix = 'sphinxai_';
-    
-    /** @var array Cache key prefixes for different data types */
-    private const KEY_PREFIXES = [
-        'search' => 'search_',
-        'model' => 'model_',
-        'config' => 'config_',
-        'stats' => 'stats_',
-        'suggestions' => 'suggestions_'
-    ];
-    
+    private readonly bool $isAvailable;
+    private readonly string $prefix;
+
     /**
-     * Constructor
+     * Constructor with enhanced initialization
      */
-    public function __construct()
-    {
-        global $modSettings;
+    public function __construct(
+        private readonly int $defaultTtl = 3600
+    ) {
+        global $modSettings, $db_prefix;
         
-        // Check if SMF cache is enabled
+        // Initialize availability based on SMF cache
         $this->isAvailable = !empty($modSettings['cache_enable']);
         
         // Use SMF table prefix for cache keys
-        global $db_prefix;
-        if (!empty($db_prefix)) {
-            $this->prefix = $db_prefix . 'sphinxai_';
-        }
+        $this->prefix = !empty($db_prefix) ? $db_prefix . 'sphinxai_' : 'sphinxai_';
     }
-    
+
     /**
      * Check if cache is available
-     * @return bool
      */
     public function isAvailable(): bool
     {
         return $this->isAvailable && function_exists('cache_put_data') && function_exists('cache_get_data');
     }
-    
+
     /**
-     * Generate cache key with proper prefix
-     * @param string $type Cache type (search, model, etc.)
-     * @param string $key Base key
-     * @return string Full cache key
+     * Generate cache key with proper prefix using enum
      */
-    private function getCacheKey(string $type, string $key): string
+    private function getCacheKey(CacheKeyType $type, string $key): string
     {
-        $prefix = self::KEY_PREFIXES[$type] ?? '';
-        return $this->prefix . $prefix . hash('sha256', $key);
+        return $this->prefix . $type->value . hash('sha256', $key);
     }
-    
+
     /**
-     * Put data into SMF cache
-     * @param string $key Cache key
-     * @param mixed $data Data to cache
-     * @param int $ttl Time to live in seconds
-     * @return bool Success status
+     * Put data into SMF cache with union types
      */
-    private function putCache(string $key, $data, int $ttl): bool
+    private function putCache(string $key, array|string|int|float|bool|null $data, int $ttl): bool
     {
         if (!$this->isAvailable()) {
             return false;
@@ -93,11 +71,23 @@ class SphinxAICache
             return false;
         }
     }
-    
+
     /**
-     * Get data from SMF cache
-     * @param string $key Cache key
-     * @return mixed Cached data or null if not found
+     * Get data from SMF cache with union return type
+     */
+    private function getCache(string $key): array|string|int|float|bool|null
+    {
+        if (!$this->isAvailable()) {
+            return null;
+        }
+        
+        try {
+            return cache_get_data($key);
+        } catch (Exception $e) {
+            error_log('SphinxAI Cache: Failed to get cache data - ' . $e->getMessage());
+            return null;
+        }
+    }
      */
     private function getCache(string $key)
     {

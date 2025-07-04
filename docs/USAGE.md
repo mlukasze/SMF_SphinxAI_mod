@@ -372,6 +372,25 @@ Configure webhooks for search events:
 - Keep models and indexes updated
 - Configure appropriate caching and rate limits
 
+## Technical Overview
+
+### Modern PHP Architecture (8.1+)
+
+The plugin is built with modern PHP 8.1+ features for improved performance and maintainability:
+
+- **Type Safety**: Extensive use of enums and union types for configuration and search parameters
+- **Performance**: Constructor property promotion and readonly properties reduce memory overhead
+- **Reliability**: Match expressions and nullsafe operators improve error handling
+- **Maintainability**: Clear separation of concerns with dependency injection and service classes
+
+### Search Flow
+
+1. **Query Processing** (PHP with enums for search types)
+2. **Cache Check** (Redis integration with type-safe cache keys)
+3. **AI Analysis** (Python models via secure subprocess execution)
+4. **Result Aggregation** (PHP services with union types for flexible data handling)
+5. **Response Formatting** (Modern PHP templating with readonly configuration)
+
 ---
 
 Next: [Performance Guide](PERFORMANCE.md) | [Troubleshooting](TROUBLESHOOTING.md)

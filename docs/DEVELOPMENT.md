@@ -11,12 +11,13 @@ Guide for developers who want to contribute to or extend the SMF Sphinx AI Searc
 - [Contributing](#contributing)
 - [API Development](#api-development)
 - [Extension Development](#extension-development)
+- [Modern PHP 8.1+ Features](#modern-php-81-features)
 
 ## Development Setup
 
 ### Prerequisites
 - Git
-- PHP 7.4+ with development extensions
+- PHP 8.1+ with development extensions (uses modern PHP features: enums, union types, constructor property promotion, readonly properties, match expressions)
 - Python 3.8+ with pip
 - MySQL/MariaDB
 - Redis
@@ -101,7 +102,7 @@ SMF_SphinxAI_mod/
 
 ### PHP Standards
 
-Follow PSR-12 coding standards:
+Follow PSR-12 coding standards with modern PHP 8.1+ features:
 
 ```php
 <?php
@@ -114,18 +115,40 @@ Follow PSR-12 coding standards:
 
 declare(strict_types=1);
 
+// Use enums for type safety
+enum SearchType: string 
+{
+    case SEMANTIC = 'semantic';
+    case EXACT = 'exact';
+    case FUZZY = 'fuzzy';
+}
+
 class SphinxAIExampleController
 {
+    // Constructor property promotion with readonly properties
+    public function __construct(
+        private readonly SphinxAIConfig $config,
+        private readonly LoggerInterface $logger,
+    ) {}
+
     /**
-     * Method documentation
+     * Method documentation with union types
      * 
-     * @param string $param Parameter description
-     * @return array Return value description
+     * @param string $query The search query
+     * @param SearchType $type The search type
+     * @return array|null Return value description
      */
-    public function exampleMethod(string $param): array
+    public function search(string $query, SearchType $type): array|null
     {
-        // Implementation
-        return [];
+        // Use match expressions instead of switch
+        $strategy = match($type) {
+            SearchType::SEMANTIC => new SemanticSearchStrategy(),
+            SearchType::EXACT => new ExactSearchStrategy(),
+            SearchType::FUZZY => new FuzzySearchStrategy(),
+        };
+
+        // Use nullsafe operator
+        return $this->searchService?->execute($query, $strategy);
     }
 }
 ```
@@ -619,11 +642,6 @@ def test_cache_performance_with_large_data():
     
     assert duration < 5.0  # Should complete within 5 seconds
 ```
-        coordinator = SearchCoordinator()
-        
-        with pytest.raises(ValueError):
-            coordinator.search("")
-```
 
 ## Contributing
 
@@ -884,6 +902,142 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 ```
 
----
+## Modern PHP 8.1+ Features
 
-For more information, check the [API Documentation](API.md) and [Contributing Guidelines](CONTRIBUTING.md).
+This project leverages modern PHP 8.1+ features for improved code quality, type safety, and performance:
+
+### Enums (PHP 8.1+)
+Used for type-safe constants and configuration values:
+
+```php
+// SphinxAIEnums.php
+enum CacheKeyType: string 
+{
+    case SEARCH_RESULTS = 'search_results';
+    case USER_QUERIES = 'user_queries';
+    case MODEL_CACHE = 'model_cache';
+}
+
+enum SearchType: string 
+{
+    case SEMANTIC = 'semantic';
+    case EXACT = 'exact';
+    case FUZZY = 'fuzzy';
+}
+
+enum LogLevel: string 
+{
+    case DEBUG = 'debug';
+    case INFO = 'info';
+    case WARNING = 'warning';
+    case ERROR = 'error';
+}
+```
+
+### Constructor Property Promotion (PHP 8.0+)
+Reduces boilerplate code in constructors:
+
+```php
+class SphinxAICache
+{
+    public function __construct(
+        private readonly Redis $redis,
+        private readonly int $ttl = 3600,
+        private readonly string $prefix = 'sphinxai:',
+    ) {}
+}
+```
+
+### Readonly Properties (PHP 8.1+)
+Ensures immutability of important configuration:
+
+```php
+class SphinxAIConfig
+{
+    public function __construct(
+        private readonly array $config,
+        private readonly string $configPath,
+    ) {}
+}
+```
+
+### Union Types (PHP 8.0+)
+More flexible type declarations:
+
+```php
+public function search(string $query): array|null
+{
+    return $this->executeSearch($query);
+}
+
+public function getCacheData(string $key): string|array|null
+{
+    return $this->redis->get($key);
+}
+```
+
+### Match Expressions (PHP 8.0+)
+Cleaner control flow than switch statements:
+
+```php
+$cacheKey = match($type) {
+    CacheKeyType::SEARCH_RESULTS => "search:{$query}",
+    CacheKeyType::USER_QUERIES => "user:{$userId}",
+    CacheKeyType::MODEL_CACHE => "model:{$modelId}",
+};
+
+$logLevel = match($this->config->getLogLevel()) {
+    LogLevel::DEBUG => Logger::DEBUG,
+    LogLevel::INFO => Logger::INFO,
+    LogLevel::WARNING => Logger::WARNING,
+    LogLevel::ERROR => Logger::ERROR,
+};
+```
+
+### Nullsafe Operator (PHP 8.0+)
+Safe navigation through potentially null objects:
+
+```php
+$result = $this->searchService?->search($query)?->getResults();
+$config = $this->configManager?->getConfig()?->getValue('timeout');
+```
+
+### Named Arguments (PHP 8.0+)
+Improved function calls with clear parameter names:
+
+```php
+$searchService = SphinxAISearchService::createWithConfig(
+    config: $config,
+    logger: $logger,
+    cache: $cache,
+    rateLimit: true,
+    maxResults: 50
+);
+```
+
+### Attributes (PHP 8.0+)
+Metadata for classes and methods:
+
+```php
+#[Route('/api/search')]
+#[RequiresAuth]
+class SphinxAIApiController
+{
+    #[Cache(ttl: 300)]
+    #[RateLimit(requests: 10, window: 60)]
+    public function search(string $query): JsonResponse
+    {
+        // Implementation
+    }
+}
+```
+
+### Best Practices
+
+1. **Use enums** instead of class constants for related values
+2. **Leverage constructor property promotion** to reduce boilerplate
+3. **Mark properties as readonly** when they shouldn't change after construction
+4. **Use union types** for flexible APIs while maintaining type safety
+5. **Prefer match expressions** over switch statements for better type inference
+6. **Use the nullsafe operator** to avoid verbose null checks
+7. **Use named arguments** for complex function calls to improve readability

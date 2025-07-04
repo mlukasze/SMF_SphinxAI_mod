@@ -13,6 +13,7 @@ Complete configuration guide for the SMF Sphinx AI Search Plugin, covering all s
 - [Security Settings](#security-settings)
 - [Advanced Configuration](#advanced-configuration)
 - [Environment Variables](#environment-variables)
+- [Prerequisites](#prerequisites)
 
 ## Overview
 
@@ -585,6 +586,38 @@ tar -czf sphinx_ai_config_backup.tar.gz \
 
 # Restore configuration
 tar -xzf sphinx_ai_config_backup.tar.gz
+```
+
+## Prerequisites
+
+### PHP Requirements (8.1+)
+
+This plugin requires **PHP 8.1 or higher** and leverages modern PHP language features:
+
+- **Enums**: Type-safe constants for configuration values and cache keys
+- **Constructor Property Promotion**: Reduced boilerplate in service classes
+- **Readonly Properties**: Immutable configuration and dependency injection
+- **Union Types**: Flexible type declarations for search results and cache data
+- **Match Expressions**: Clean control flow for configuration mapping
+- **Nullsafe Operator**: Safe navigation through optional dependencies
+- **Named Arguments**: Clear function calls for service factory methods
+
+### Required PHP Extensions
+```
+✅ php-redis (for Redis caching)
+✅ php-json (for configuration parsing)
+✅ php-mysqli or php-pdo_mysql (for database access)
+✅ php-curl (for API requests)
+✅ php-mbstring (for text processing)
+```
+
+### Recommended PHP Configuration
+```ini
+; php.ini recommendations
+memory_limit = 512M
+max_execution_time = 300
+upload_max_filesize = 50M
+post_max_size = 50M
 ```
 
 ---

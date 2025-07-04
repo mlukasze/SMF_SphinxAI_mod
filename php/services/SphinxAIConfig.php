@@ -1,22 +1,26 @@
 <?php
 
 /**
- * SphinxAI Configuration Manager
+ * SphinxAI Configuration Manager - PHP 8.1+ Version
  * Centralized configuration management for all SphinxAI settings
  * 
  * @package SphinxAI
- * @version 1.0.0
+ * @version 2.0.0
  * @author SMF Sphinx AI Search Plugin
  */
+
+declare(strict_types=1);
 
 if (!defined('SMF')) {
     die('No direct access...');
 }
 
+require_once dirname(__DIR__) . '/core/SphinxAIEnums.php';
+
 class SphinxAIConfig
 {
-    /** @var array Default configuration values */
-    private static $defaults = [
+    /** Default configuration values with typed array */
+    private static readonly array $defaults = [
         // Core settings
         'enabled' => true,
         'model_path' => '',
@@ -28,7 +32,7 @@ class SphinxAIConfig
         // Cache settings
         'cache_enabled' => true,
         'cache_ttl' => 3600,
-        'cache_type' => 'redis',
+        'cache_type' => CacheType::REDIS->value,
         
         // Redis settings
         'redis_host' => '127.0.0.1',
@@ -67,13 +71,13 @@ class SphinxAIConfig
         'slow_query_threshold' => 1.0,
         
         // Logging settings
-        'log_level' => 'INFO',
+        'log_level' => LogLevel::INFO->value,
         'log_api_requests' => true,
         'log_search_stats' => true,
         'log_errors' => true,
         
         // Search settings
-        'search_type' => 'hybrid',
+        'search_type' => SearchType::HYBRID->value,
         'use_ai_summary' => true,
         'use_genai' => true,
         'polish_language_support' => true,
@@ -83,13 +87,13 @@ class SphinxAIConfig
         'metrics_collection' => true,
         'performance_monitoring' => true
     ];
-    
-    /** @var array Configuration cache */
-    private static $config = null;
-    
-    /** @var string Configuration file path */
-    private static $configFile = null;
-    
+
+    /** Configuration cache */
+    private static ?array $config = null;
+
+    /** Configuration file path */
+    private static ?string $configFile = null;
+
     /**
      * Initialize configuration system
      */

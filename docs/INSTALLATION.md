@@ -11,12 +11,15 @@ This guide provides step-by-step instructions for installing the SMF Sphinx AI S
 - [Post-Installation Setup](#post-installation-setup)
 - [Verification](#verification)
 - [Troubleshooting](#troubleshooting)
+- [Configuration](#configuration)
+- [Usage Guide](#usage-guide)
+- [Administration](#administration)
 
 ## Prerequisites
 
 ### System Requirements
 - **SMF**: 2.1.* or higher
-- **PHP**: 7.4+ (8.0+ recommended)
+- **PHP**: 8.1+ (8.2+ recommended) - Uses modern PHP features including enums, union types, constructor property promotion, and readonly properties
 - **Python**: 3.8+ (3.10+ recommended)
 - **MySQL**: 5.7+ or MariaDB 10.3+
 - **Redis**: 6.0+ (for caching)
@@ -253,73 +256,246 @@ python main.py test-models
 
 ## Troubleshooting
 
-### Common Issues
+### Common Installation Issues
 
-#### Python Import Errors
+#### Plugin Installation Fails
+**Symptoms**: Error during SMF package installation
+**Solutions**:
+1. **Check PHP Version**: Ensure PHP 8.1+ is installed and active
+2. **Verify Permissions**: Check file/directory permissions (644 for files, 755 for directories)
+3. **Database Connection**: Test database connectivity and permissions
+4. **SMF Version**: Confirm SMF 2.1+ is installed
+5. **Error Logs**: Check SMF error logs in Admin → Maintenance → Forum Errors
+
+#### Python Environment Issues
+**Symptoms**: "Python not found" or import errors
+**Solutions**:
 ```bash
-# Reinstall dependencies
-pip install --force-reinstall -r requirements.txt
-
 # Check Python version
 python --version  # Should be 3.8+
+
+# Reinstall dependencies
+pip install -r SphinxAI/requirements-runtime.txt --force-reinstall
+
+# Test critical imports
+python -c "import torch, transformers, sentence_transformers, openvino"
+
+# Check virtual environment
+which python  # Should point to your venv if activated
 ```
 
-#### Model Download Failures
+#### Sphinx Daemon Problems
+**Symptoms**: Search results empty or daemon connection fails
+**Solutions**:
 ```bash
-# Clear cache and retry
-rm -rf ~/.cache/huggingface/
-python unified_model_converter.py --download-all --force
-```
-
-#### Permission Issues
-```bash
-# Fix file permissions
-find . -type f -name "*.php" -exec chmod 644 {} \;
-find . -type d -exec chmod 755 {} \;
-```
-
-#### Redis Connection Issues
-```bash
-# Test Redis connection
-redis-cli ping  # Should return "PONG"
-
-# Check Redis configuration
-redis-cli config get "*"
-```
-
-#### Sphinx Search Issues
-```bash
-# Check Sphinx status
+# Check daemon status
 sudo systemctl status sphinxsearch
 
-# Test Sphinx connection
+# Test connection to Sphinx
 mysql -h127.0.0.1 -P9306
+
+# Check logs
+sudo tail -f /var/log/sphinxsearch/searchd.log
+
+# Restart daemon
+sudo systemctl restart sphinxsearch
 ```
+
+#### Model Download Issues
+**Symptoms**: "Model not found" or download failures
+**Solutions**:
+1. **Check Internet Connection**: Ensure access to huggingface.co
+2. **Manual Download**: Use `git lfs` to download models manually
+3. **Disk Space**: Verify sufficient storage (2GB+ free)
+4. **Permissions**: Check write permissions in SphinxAI/models/ directory
+
+#### Performance Problems
+**Symptoms**: Slow search responses or high memory usage
+**Solutions**:
+1. **Increase Memory**: Ensure 4GB+ RAM available
+2. **Optimize Models**: Use OpenVINO conversion for better performance
+3. **Enable Caching**: Configure Redis for result caching
+4. **Database Tuning**: Optimize MySQL configuration
+
+### Specific Error Messages
+
+#### "Call to undefined method" errors
+**Cause**: Using old PHP syntax or version
+**Solution**: 
+- Upgrade to PHP 8.1+
+- Clear opcode cache: `sudo systemctl restart php8.1-fpm`
+- Verify modern PHP features are available
+
+#### "Parse error: syntax error" messages
+**Cause**: PHP 8.1+ syntax in older PHP versions
+**Solution**: 
+- Ensure PHP 8.1+ is installed and active
+- Check `php -v` and web server PHP version match
+- Restart web server after PHP upgrade
+
+#### "Class 'Enum' not found" errors
+**Cause**: Missing PHP 8.1+ enum support
+**Solution**: 
+- Verify PHP version: `php -r "echo PHP_VERSION;"`
+- Test enum support: `php -r "enum Test: string { case VALUE = 'test'; } echo 'OK';"`
+- Restart web server and clear caches
+
+#### "Model not found" or "OpenVINO runtime error"
+**Cause**: Missing or corrupted model files
+**Solution**:
+```bash
+# Check model directory
+ls -la SphinxAI/models/
+
+# Re-download models
+cd SphinxAI
+python -c "
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('all-MiniLM-L6-v2')
+"
+
+# Convert to OpenVINO format
+optimum-cli export openvino --model sentence-transformers/all-MiniLM-L6-v2 --output models/
+```
+
+#### "Database connection failed"
+**Cause**: Incorrect database credentials or server issues
+**Solution**:
+1. Check database credentials in SMF Settings.php
+2. Test connection manually: `mysql -u username -p database_name`
+3. Verify database server is running
+4. Check firewall settings and port accessibility
+
+#### "Redis connection failed" 
+**Cause**: Redis server not running or misconfigured
+**Solution**:
+```bash
+# Check Redis status
+sudo systemctl status redis
+
+# Test connection
+redis-cli ping  # Should return "PONG"
+
+# Check configuration
+grep -E "^(bind|port)" /etc/redis/redis.conf
+
+# Restart Redis
+sudo systemctl restart redis
+```
+
+### Debug Mode
+
+For detailed troubleshooting, enable debug mode:
+
+1. **Edit SphinxAI/config.json**:
+```json
+{
+  "logging": {
+    "level": "DEBUG",
+    "file": "logs/debug.log",
+    "max_size": "10MB"
+  },
+  "debug": {
+    "enabled": true,
+    "verbose_errors": true
+  }
+}
+```
+
+2. **Check Debug Logs**:
+```bash
+tail -f SphinxAI/logs/debug.log
+```
+
+3. **SMF Debug Mode**:
+   - Go to SMF Admin → Configuration → Server Settings
+   - Enable "Database Error Logging"
+   - Enable "Show Database Queries"
 
 ### Getting Help
 
-If you encounter issues:
+If problems persist:
 
-1. **Check Logs**
-   - SMF error logs
-   - Apache/Nginx error logs
-   - Python logs in `logs/` directory
+1. **Check Documentation**: Review all guides in the `docs/` folder
+2. **Search Issues**: Check GitHub issues for similar problems
+3. **Community Support**: Post in SMF community forums
+4. **Professional Support**: Available for enterprise installations
 
-2. **Verify Requirements**
-   - Run system requirements check
-   - Ensure all services are running
+**When Requesting Help, Include**:
+- PHP version (`php -v`)
+- SMF version
+- Operating system details
+- Complete error messages
+- Steps taken before the error
+- Debug log excerpts (without sensitive information)
 
-3. **Community Support**
-   - GitHub Issues: Report bugs and get help
-   - SMF Community: Ask in the modifications section
+### Performance Optimization
 
-### Next Steps
+#### Hardware Recommendations
+- **CPU**: 4+ cores for concurrent searches
+- **Memory**: 8GB+ for large forums with many models
+- **Storage**: SSD for index files and model storage
+- **Network**: Low-latency database connection
 
-After successful installation:
-- 📖 [Configuration Guide](CONFIGURATION.md)
-- 🤖 [Model Management](MODELS.md)
-- 📚 [Usage Documentation](USAGE.md)
+#### Software Optimization
+
+**OpenVINO Model Conversion**:
+```bash
+# Install OpenVINO development tools
+pip install openvino-dev
+
+# Convert sentence transformer to OpenVINO
+optimum-cli export openvino \
+  --model sentence-transformers/all-MiniLM-L6-v2 \
+  --output SphinxAI/models/openvino/
+```
+
+**Caching Configuration**:
+```json
+{
+  "cache": {
+    "enabled": true,
+    "backend": "redis",
+    "ttl": 3600,
+    "max_size": 10000
+  }
+}
+```
+
+**Database Optimization**:
+```sql
+-- Add indexes for better search performance
+CREATE INDEX idx_sphinx_ai_topic ON smf_sphinx_ai_index(topic_id);
+CREATE INDEX idx_sphinx_ai_board ON smf_sphinx_ai_index(board_id); 
+CREATE INDEX idx_sphinx_ai_date ON smf_sphinx_ai_index(indexed_date);
+CREATE INDEX idx_sphinx_ai_score ON smf_sphinx_ai_index(relevance_score);
+```
+
+## Security Considerations
+
+### File Permissions
+```bash
+# Set correct permissions
+find SphinxAI/ -type f -exec chmod 644 {} \;
+find SphinxAI/ -type d -exec chmod 755 {} \;
+find php/ -type f -exec chmod 644 {} \;
+find php/ -type d -exec chmod 755 {} \;
+
+# Protect sensitive files
+chmod 600 SphinxAI/config.json
+chmod 600 SphinxAI/.env
+```
+
+### Network Security
+- **Firewall**: Restrict Sphinx daemon access (port 9312) to localhost only
+- **Database**: Use dedicated database user with minimal required permissions
+- **API Access**: Implement rate limiting and authentication for API endpoints
+
+### Data Privacy
+- **Search Logs**: Configure log retention policies
+- **User Data**: Ensure GDPR compliance for search history
+- **Model Security**: Protect model files from unauthorized access
 
 ---
 
-Need help? Check our [Troubleshooting Guide](TROUBLESHOOTING.md) or open an issue on GitHub.
+For additional help, consult the [Development Guide](DEVELOPMENT.md) or [Troubleshooting Guide](TROUBLESHOOTING.md).

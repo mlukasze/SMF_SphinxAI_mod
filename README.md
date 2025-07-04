@@ -1,9 +1,9 @@
 # Sphinx AI Search for SMF
 
 [![Tests](https://github.com/username/smf-sphinx-ai-search/actions/workflows/tests.yml/badge.svg)](https://github.com/username/smf-sphinx-ai-search/actions/workflows/tests.yml)
-[![Coverage](https://codecov.io/gh/username/smf-sphinx-ai-search/branch/main/graph/badge.svg)](https://codecov.io/gh/username/smf-sphinx-ai-search)
+[![Coverage](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search/branch/main/graph/badge.svg)](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search)
 [![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
-[![PHP](https://img.shields.io/badge/php-7.4%2B-blue.svg)](https://www.php.net/)
+[![PHP](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![SMF](https://img.shields.io/badge/SMF-2.1%2B-orange.svg)](https://www.simplemachines.org/)
 
@@ -38,6 +38,7 @@ A powerful AI-enhanced search plugin for Simple Machines Forum (SMF) that combin
 
 ## Table of Contents
 
+- [🚀 Modern PHP Architecture](#-modern-php-architecture)
 - [Features](#features)
 - [Requirements](#requirements)
   - [System Requirements](#system-requirements)
@@ -78,7 +79,7 @@ A powerful AI-enhanced search plugin for Simple Machines Forum (SMF) that combin
 
 ### System Requirements
 - **SMF**: 2.1.* or higher
-- **PHP**: 7.4+ (8.0+ recommended)
+- **PHP**: 8.1+ (8.2+ recommended) - Leverages modern PHP features including enums, union types, constructor property promotion, and readonly properties
 - **Python**: 3.8+ (3.10+ recommended)
 - **MySQL**: 5.7+ or MariaDB 10.3+
 - **Sphinx Search**: 2.2.11+ (3.x recommended)
@@ -182,10 +183,11 @@ For user guides and API documentation, see: **[📚 Usage Documentation](docs/US
 
 ### 🔧 Technical Documentation
 
-- **Architecture**: Modular design with PHP controllers and Python AI services
+- **Architecture**: Modular design with modern PHP 8.1+ controllers and Python AI services
+- **Modern PHP Features**: Enums, union types, constructor property promotion, readonly properties, match expressions
 - **Security**: CSRF protection, SQL injection prevention, input validation
 - **Performance**: Redis caching, database optimization, model compression
-- **Compatibility**: SMF 2.1+, PHP 7.4+, Python 3.8+
+- **Compatibility**: SMF 2.1+, PHP 8.1+, Python 3.8+
 
 ## Development
 
@@ -219,6 +221,50 @@ SMF_SphinxAI_mod/
 │   └── models/            # Model storage (created during setup)
 ├── docs/                  # Documentation
 └── install.*              # Installation scripts
+```
+
+## 🚀 Modern PHP Architecture
+
+This plugin leverages cutting-edge **PHP 8.1+ features** for enterprise-grade performance and maintainability:
+
+### Type Safety & Performance
+- **🔒 Enums**: Type-safe constants for search types, cache keys, and configuration values
+- **⚡ Constructor Property Promotion**: Reduced boilerplate and memory footprint
+- **🛡️ Readonly Properties**: Immutable configuration and dependency injection
+- **🔄 Union Types**: Flexible APIs with compile-time type checking
+- **🎯 Match Expressions**: Cleaner control flow with better type inference
+
+### Code Quality Features  
+- **🔍 Nullsafe Operator**: Safe navigation through optional dependencies
+- **📝 Named Arguments**: Self-documenting function calls in service factories
+- **🏗️ Attributes**: Metadata-driven configuration for routes and caching
+- **🔧 Strict Types**: Full strict typing throughout the codebase
+
+### Example: Modern Search Service
+```php
+enum SearchType: string {
+    case SEMANTIC = 'semantic';
+    case EXACT = 'exact';
+    case FUZZY = 'fuzzy';
+}
+
+class SphinxAISearchService {
+    public function __construct(
+        private readonly SphinxAIConfig $config,
+        private readonly LoggerInterface $logger,
+        private readonly SphinxAICache $cache,
+    ) {}
+
+    public function search(string $query, SearchType $type): SearchResult|null {
+        $strategy = match($type) {
+            SearchType::SEMANTIC => new SemanticStrategy(),
+            SearchType::EXACT => new ExactStrategy(), 
+            SearchType::FUZZY => new FuzzyStrategy(),
+        };
+
+        return $this->cache?->get($query) ?? $strategy->execute($query);
+    }
+}
 ```
 
 ## Contributing

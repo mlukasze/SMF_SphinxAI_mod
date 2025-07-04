@@ -13,6 +13,7 @@ This guide covers downloading, converting, optimizing, and managing AI models fo
 - [Custom Models](#custom-models)
 - [Model Management](#model-management)
 - [Troubleshooting](#troubleshooting)
+- [PHP Model Management Interface](#php-model-management-interface)
 
 ## Overview
 
@@ -412,6 +413,56 @@ For model-related issues:
 3. **Model-Specific Support**
    - Check individual model cards on Hugging Face
    - Review model licensing and usage requirements
+
+## PHP Model Management Interface
+
+The plugin includes a modern PHP 8.1+ interface for model management:
+
+### Model Configuration Service
+```php
+class SphinxAIModelConfig
+{
+    public function __construct(
+        private readonly array $models,
+        private readonly string $modelsPath,
+        private readonly LoggerInterface $logger,
+    ) {}
+
+    public function getModelInfo(ModelType $type): ModelInfo|null
+    {
+        return match($type) {
+            ModelType::EMBEDDING => $this->embeddingModels,
+            ModelType::LLM => $this->llmModels,
+            ModelType::QUANTIZED => $this->quantizedModels,
+        };
+    }
+}
+```
+
+### Model Status Enums
+```php
+enum ModelStatus: string 
+{
+    case DOWNLOADING = 'downloading';
+    case CONVERTING = 'converting';
+    case OPTIMIZING = 'optimizing';
+    case READY = 'ready';
+    case ERROR = 'error';
+}
+
+enum ModelType: string 
+{
+    case EMBEDDING = 'embedding';
+    case LLM = 'llm';
+    case QUANTIZED = 'quantized';
+}
+```
+
+### Admin Interface Features
+- **Real-time Status**: Live updates of model download and conversion progress
+- **Type Safety**: Enum-based model type selection prevents configuration errors
+- **Error Handling**: Comprehensive error reporting with detailed logging
+- **Memory Management**: Readonly properties ensure efficient memory usage during model operations
 
 ---
 

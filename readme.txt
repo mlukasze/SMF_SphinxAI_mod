@@ -52,7 +52,7 @@ Some advanced AI models require authentication:
 
 [b]Requirements:[/b]
 - SMF 2.1.*
-- PHP 7.4 or higher
+- PHP 8.1 or higher (uses modern PHP features: enums, union types, constructor property promotion)
 - Python 3.8+ (for OpenVINO and language model)
 - Sphinx search daemon
 - OpenVINO toolkit

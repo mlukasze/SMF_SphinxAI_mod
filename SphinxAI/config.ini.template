@@ -1,0 +1,83 @@
+[huggingface]
+# Your Hugging Face token (get from https://huggingface.co/settings/tokens)
+# Required for accessing private models or increasing download limits
+# For public models, you can leave this commented out
+token = # hf_your_token_here
+
+[database]
+# Database connection settings (auto-generated from SMF Settings.php)
+host = localhost
+port = 3306
+database = smf_database
+user = smf_user
+password = smf_password
+table_prefix = smf_
+charset = utf8mb4
+
+[sphinx]
+# Sphinx search daemon settings
+config_path = /etc/sphinx/sphinx.conf
+host = localhost
+port = 9312
+index_name = smf_posts
+searchd_pid = /var/run/sphinx/searchd.pid
+binlog_path = /var/lib/sphinx/binlog
+
+[model_settings]
+# AI model configuration
+model_path = 
+device = CPU
+max_results = 10
+summary_length = 200
+confidence_threshold = 0.1
+embedding_model = all-MiniLM-L6-v2
+
+# Default model to use for conversion
+default_model = sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+
+# Alternative models for testing (uncomment to use)
+# default_model = sentence-transformers/all-MiniLM-L6-v2
+# default_model = sentence-transformers/distiluse-base-multilingual-cased
+
+[paths]
+# Model storage directories
+models_dir = SphinxAI/models
+original_dir = SphinxAI/models/original
+openvino_dir = SphinxAI/models/openvino
+compressed_dir = SphinxAI/models/compressed
+genai_dir = SphinxAI/models/genai
+
+[indexing]
+# Indexing settings
+batch_size = 1000
+max_posts = 10000
+auto_index = true
+index_interval = 3600
+full_reindex_interval = 86400
+
+[cache]
+# Redis cache settings
+enabled = true
+host = localhost
+port = 6379
+database = 0
+ttl = 3600
+max_size = 1000
+
+[security]
+# Security settings
+max_query_length = 1000
+rate_limit = 100
+rate_limit_window = 3600
+
+[compression]
+# NNCF compression settings
+compression_ratio_threshold = 0.1
+calibration_samples = 100
+
+[logging]
+# Logging level (DEBUG, INFO, WARNING, ERROR)
+level = INFO
+file = logs/sphinx_ai.log
+max_size = 10MB
+backup_count = 5

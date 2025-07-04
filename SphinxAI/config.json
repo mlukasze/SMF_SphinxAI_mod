@@ -15,14 +15,6 @@
     "searchd_pid": "/var/run/sphinx/searchd.pid",
     "binlog_path": "/var/lib/sphinx/binlog"
   },
-  "database_settings": {
-    "host": "localhost",
-    "port": 3306,
-    "database": "smf",
-    "user": "smf_user",
-    "password": "password",
-    "table_prefix": "smf_"
-  },
   "indexing_settings": {
     "batch_size": 1000,
     "max_posts": 10000,

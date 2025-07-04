@@ -429,7 +429,7 @@ models/
 
 # Configuration files with sensitive data
 config.ini
-model_config.ini
+!config.ini.template
 sphinx.conf
 !sphinx.conf.sample
 

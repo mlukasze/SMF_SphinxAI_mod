@@ -61,6 +61,13 @@ class SphinxAIInstallHandler
 				return false;
 			}
 
+			// Generate configuration file from SMF settings
+			require_once dirname(__DIR__) . '/utils/SphinxAIConfigGenerator.php';
+			if (!SphinxAIConfigGenerator::generateConfigFile()) {
+				log_error('Sphinx AI Search: Failed to generate configuration file');
+				return false;
+			}
+
 			// Create database tables
 			self::createTables();
 

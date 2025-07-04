@@ -14,7 +14,10 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from core.search_coordinator import SearchCoordinator
-from core.constants import VERSION, PLUGIN_NAME
+from core.constants import (
+    VERSION, PLUGIN_NAME, config_manager, 
+    get_database_config, get_model_config, get_sphinx_config
+)
 from handlers.sphinx_handler import SphinxSearchHandler
 from handlers.openvino_handler import OpenVINOHandler
 from handlers.genai_handler import GenAIHandler
@@ -25,6 +28,25 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+def load_configuration() -> Dict[str, Any]:
+    """Load configuration from INI and JSON files
+    
+    Returns:
+        Combined configuration dictionary
+    """
+    if not config_manager.config_exists():
+        logger.error("No configuration files found. Please ensure config.ini or config.json exists.")
+        sys.exit(1)
+    
+    try:
+        config = config_manager.load_config()
+        logger.info("Configuration loaded successfully")
+        return config
+    except Exception as e:
+        logger.error(f"Failed to load configuration: {e}")
+        sys.exit(1)
 
 
 def setup_handlers(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -76,41 +98,16 @@ def setup_handlers(config: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def load_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
-    """Load configuration from file.
+    """Load configuration using the new config manager.
     
     Args:
-        config_path: Path to configuration file
+        config_path: Path to configuration file (deprecated, kept for compatibility)
         
     Returns:
         Configuration dictionary
     """
-    if config_path is None:
-        config_path = Path(__file__).parent / 'config.json'
-    
-    if config_path.exists():
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            logger.error(f"Failed to load config from {config_path}: {e}")
-    
-    # Return default configuration
-    return {
-        'sphinx': {
-            'host': 'localhost',
-            'port': 9306,
-            'index': 'smf_posts'
-        },
-        'ai': {
-            'device': 'CPU',
-            'openvino_model_path': None,
-            'genai_model_path': None
-        },
-        'search': {
-            'max_results': 10,
-            'similarity_threshold': 0.1
-        }
-    }
+    # Use the new configuration manager
+    return load_configuration()
 
 
 def handle_search(args: argparse.Namespace) -> None:

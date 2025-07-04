@@ -185,69 +185,440 @@ pylint SphinxAI/
 
 ## Testing
 
-### PHP Testing
+The SMF Sphinx AI Search Plugin includes a comprehensive test suite for both PHP and Python components, designed to ensure code quality and reliability without requiring a full production environment.
 
-```bash
-# Install PHPUnit
-composer require --dev phpunit/phpunit
+### Test Infrastructure Overview
 
-# Run tests
-./vendor/bin/phpunit tests/
+The test infrastructure is located in the `tests/` directory with the following structure:
+
+```
+tests/
+├── php/                    # PHP unit tests
+│   ├── Unit/              # Unit test classes
+│   │   └── SphinxAICacheTest.php
+│   ├── bootstrap.php      # Test bootstrap and autoloading
+│   ├── TestCase.php       # Base test class
+│   └── MockFactory.php    # Factory for test mocks
+├── python/                # Python unit tests
+│   ├── test_cache.py      # Cache module tests
+│   ├── test_config_manager.py # Config manager tests
+│   ├── test_integration.py   # Integration tests
+│   ├── test_utils.py      # Utility and import tests
+│   └── conftest.py        # pytest fixtures
+├── fixtures/              # Test data and sample files
+├── composer.json          # PHP test dependencies
+├── requirements_test.txt  # Python test dependencies
+├── phpunit.xml           # PHPUnit configuration
+├── pyproject.toml        # pytest configuration
+└── run_tests.py          # Test runner script
 ```
 
-Example test:
+### Quick Start
 
-```php
-<?php
+#### Python Tests (Recommended)
 
-use PHPUnit\Framework\TestCase;
+```bash
+# Navigate to test directory
+cd tests/
 
-class SphinxAISearchServiceTest extends TestCase
-{
-    public function testSearchValidQuery(): void
-    {
-        $service = new SphinxAISearchService();
-        $results = $service->search('test query');
-        
-        $this->assertIsArray($results);
-        $this->assertArrayHasKey('results', $results);
-    }
-}
+# Run all Python tests with the test runner
+python run_tests.py
+
+# Or run pytest directly
+python -m pytest python/ -v
+
+# Run specific test class
+python -m pytest python/test_cache.py::TestSphinxAICache -v
+
+# Run with coverage
+python -m pytest python/ --cov=../SphinxAI --cov-report=html
+```
+
+#### PHP Tests
+
+```bash
+# Install PHP dependencies (requires Composer)
+cd tests/
+composer install
+
+# Run PHPUnit tests
+./vendor/bin/phpunit
+
+# Run with coverage (requires xdebug)
+./vendor/bin/phpunit --coverage-html coverage/
 ```
 
 ### Python Testing
 
+#### Dependencies
+
+The Python test suite uses pytest with comprehensive testing libraries:
+
 ```bash
-# Run all tests
-python -m pytest SphinxAI/tests/
-
-# Run with coverage
-python -m pytest --cov=SphinxAI SphinxAI/tests/
-
-# Run specific test
-python -m pytest SphinxAI/tests/test_search.py::TestSearch::test_basic_search
+# Install test dependencies
+pip install -r tests/requirements_test.txt
 ```
 
-Example test:
+Core testing libraries included:
+- **pytest**: Test framework
+- **pytest-cov**: Coverage reporting
+- **pytest-mock**: Enhanced mocking
+- **fakeredis**: Redis mocking for cache tests
+- **responses**: HTTP request mocking
+- **freezegun**: Time/date mocking
+- **factory-boy**: Test data generation
+
+#### Running Python Tests
+
+```bash
+# Run all tests
+python -m pytest tests/python/
+
+# Run with verbose output
+python -m pytest tests/python/ -v
+
+# Run specific test file
+python -m pytest tests/python/test_cache.py
+
+# Run specific test method
+python -m pytest tests/python/test_cache.py::TestSphinxAICache::test_cache_search_results_success
+
+# Run tests with markers
+python -m pytest tests/python/ -m "not slow"  # Skip slow tests
+python -m pytest tests/python/ -m "integration"  # Run only integration tests
+python -m pytest tests/python/ -m "redis"  # Run only Redis tests (if Redis available)
+
+# Run with coverage
+python -m pytest tests/python/ --cov=SphinxAI --cov-report=term-missing
+python -m pytest tests/python/ --cov=SphinxAI --cov-report=html:coverage/
+
+# Stop on first failure
+python -m pytest tests/python/ -x
+
+# Run tests in parallel (if pytest-xdist installed)
+python -m pytest tests/python/ -n auto
+```
+
+#### Test Categories and Markers
+
+Tests are organized with pytest markers for selective execution:
+
+- `@pytest.mark.unit`: Unit tests (default)
+- `@pytest.mark.integration`: Integration tests
+- `@pytest.mark.slow`: Performance/slow tests
+- `@pytest.mark.redis`: Tests requiring Redis connection
+- `@pytest.mark.network`: Tests requiring network access
+
+#### Python Test Examples
+
+**Basic Unit Test:**
+```python
+def test_cache_initialization():
+    """Test cache initializes correctly."""
+    cache = SphinxAICache()
+    assert cache is not None
+    assert hasattr(cache, 'config')
+```
+
+**Mock-based Test:**
+```python
+@patch('SphinxAI.utils.cache.redis_available', True)
+def test_redis_connection_success(self):
+    """Test successful Redis connection."""
+    mock_redis = MagicMock()
+    with patch('SphinxAI.utils.cache.redis', mock_redis):
+        cache = SphinxAICache()
+        # Test assertions...
+```
+
+**Integration Test:**
+```python
+@pytest.mark.integration
+def test_cache_and_config_integration(self, temp_config_file):
+    """Test cache and config working together."""
+    cache = SphinxAICache(temp_config_file)
+    assert cache.config is not None
+```
+
+### PHP Testing
+
+#### Dependencies
+
+The PHP test suite uses PHPUnit with modern testing tools:
+
+```bash
+# Install PHP dependencies
+cd tests/
+composer install
+```
+
+Key testing libraries:
+- **PHPUnit**: Test framework
+- **Mockery**: Advanced mocking library
+- **PHPStan**: Static analysis
+- **PHPCS**: Code style checking
+- **PHPMD**: Mess detection
+- **Infection**: Mutation testing
+
+#### Running PHP Tests
+
+```bash
+# Navigate to tests directory
+cd tests/
+
+# Run all tests
+./vendor/bin/phpunit
+
+# Run with verbose output
+./vendor/bin/phpunit --verbose
+
+# Run specific test class
+./vendor/bin/phpunit php/Unit/SphinxAICacheTest.php
+
+# Run with coverage (requires Xdebug)
+./vendor/bin/phpunit --coverage-html coverage/
+./vendor/bin/phpunit --coverage-text
+
+# Run static analysis
+./vendor/bin/phpstan analyse ../php/
+
+# Check code style
+./vendor/bin/phpcs ../php/
+
+# Run mutation testing
+./vendor/bin/infection
+```
+
+#### PHP Test Examples
+
+**Basic Unit Test:**
+```php
+<?php
+
+use PHPUnit\Framework\TestCase;
+use SMF\SphinxAI\Tests\MockFactory;
+
+class SphinxAICacheTest extends TestCase
+{
+    public function testCacheInitialization(): void
+    {
+        $cache = new SphinxAICache();
+        $this->assertInstanceOf(SphinxAICache::class, $cache);
+        $this->assertTrue($cache->isEnabled());
+    }
+    
+    public function testCacheStoreAndRetrieve(): void
+    {
+        $cache = new SphinxAICache();
+        $key = 'test_key';
+        $value = ['test' => 'data'];
+        
+        $result = $cache->set($key, $value, 3600);
+        $this->assertTrue($result);
+        
+        $retrieved = $cache->get($key);
+        $this->assertEquals($value, $retrieved);
+    }
+}
+```
+
+### Mock Testing Strategy
+
+Both PHP and Python tests use extensive mocking to avoid external dependencies:
+
+#### Python Mocking Examples
 
 ```python
-import pytest
-from SphinxAI.core.search_coordinator import SearchCoordinator
+# Mock Redis connection
+@patch('SphinxAI.utils.cache.redis_available', False)
+def test_cache_without_redis():
+    cache = SphinxAICache()
+    assert not cache.is_available()
 
+# Mock configuration
+@patch('SphinxAI.utils.cache.ConfigManager')
+def test_cache_with_mock_config(mock_config_manager):
+    mock_config_manager.return_value.get_cache_config.return_value = {
+        'enabled': True,
+        'type': 'redis'
+    }
+    cache = SphinxAICache()
+    # Test with mocked config...
+```
 
-class TestSearchCoordinator:
-    """Test the SearchCoordinator class."""
+#### PHP Mocking Examples
+
+```php
+public function testCacheWithMockRedis(): void
+{
+    $mockRedis = Mockery::mock('Redis');
+    $mockRedis->shouldReceive('set')->andReturn(true);
+    $mockRedis->shouldReceive('get')->andReturn('cached_value');
     
-    def test_basic_search(self):
-        """Test basic search functionality."""
-        coordinator = SearchCoordinator()
-        results = coordinator.search("test query")
-        
-        assert isinstance(results, list)
-        assert len(results) >= 0
-        
-    def test_invalid_query(self):
-        """Test handling of invalid queries."""
+    $cache = new SphinxAICache($mockRedis);
+    $result = $cache->set('key', 'value');
+    $this->assertTrue($result);
+}
+```
+
+### Test Configuration
+
+#### pytest Configuration (pyproject.toml)
+
+```toml
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--cov=../SphinxAI",
+    "--cov-report=html:coverage/html",
+    "--cov-report=term-missing",
+    "--cov-fail-under=80",
+    "-ra",
+    "--tb=short"
+]
+testpaths = ["python"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests", 
+    "slow: Slow tests",
+    "redis: Redis-dependent tests",
+    "network: Network-dependent tests"
+]
+```
+
+#### PHPUnit Configuration (phpunit.xml)
+
+```xml
+<phpunit bootstrap="php/bootstrap.php">
+    <testsuites>
+        <testsuite name="unit">
+            <directory>php/Unit</directory>
+        </testsuite>
+    </testsuites>
+    <coverage>
+        <include>
+            <directory suffix=".php">../php</directory>
+        </include>
+    </coverage>
+</phpunit>
+```
+
+### Coverage Goals
+
+- **Target Coverage**: 80%+ for both PHP and Python
+- **Critical Paths**: 95%+ coverage for cache, config, and core functionality
+- **Focus Areas**: Error handling, edge cases, security validation
+
+### Test Data and Fixtures
+
+#### Python Fixtures (conftest.py)
+
+```python
+@pytest.fixture
+def temp_config_file():
+    """Create temporary config file for testing."""
+    config_content = """
+[database]
+host = localhost
+user = test_user
+password = test_pass
+
+[cache]
+enabled = true
+type = redis
+host = localhost
+port = 6379
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False) as f:
+        f.write(config_content)
+        f.flush()
+        yield f.name
+        os.unlink(f.name)
+```
+
+### Continuous Integration
+
+The test suite is designed for CI/CD integration:
+
+```yaml
+# Example GitHub Actions workflow
+name: Tests
+on: [push, pull_request]
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - run: pip install -r tests/requirements_test.txt
+      - run: python -m pytest tests/python/ --cov=SphinxAI
+      
+  php-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+      - run: cd tests && composer install
+      - run: cd tests && ./vendor/bin/phpunit
+```
+
+### Debugging Tests
+
+#### Python Test Debugging
+
+```bash
+# Run with debugging output
+python -m pytest tests/python/ -v -s
+
+# Use pdb for debugging
+python -m pytest tests/python/ --pdb
+
+# Run single test with print statements
+python -m pytest tests/python/test_cache.py::test_specific_method -v -s
+```
+
+#### PHP Test Debugging
+
+```bash
+# Run with verbose output
+./vendor/bin/phpunit --verbose
+
+# Debug specific test
+./vendor/bin/phpunit --verbose php/Unit/SphinxAICacheTest.php::testSpecificMethod
+```
+
+### Best Practices
+
+1. **Write tests first** (TDD) when adding new features
+2. **Use descriptive test names** that explain what is being tested
+3. **Mock external dependencies** to ensure test isolation
+4. **Test both success and failure paths**
+5. **Include edge cases and boundary conditions**
+6. **Keep tests fast and independent**
+7. **Use fixtures for common test data**
+8. **Maintain high test coverage** but focus on critical paths
+
+### Performance Testing
+
+```python
+# Example performance test
+@pytest.mark.slow
+def test_cache_performance_with_large_data():
+    """Test cache performance with large datasets."""
+    cache = SphinxAICache()
+    large_results = [{'id': i, 'data': f'content_{i}'} for i in range(10000)]
+    
+    start_time = time.time()
+    cache.cache_search_results("perf_test", {}, large_results)
+    duration = time.time() - start_time
+    
+    assert duration < 5.0  # Should complete within 5 seconds
+```
         coordinator = SearchCoordinator()
         
         with pytest.raises(ValueError):

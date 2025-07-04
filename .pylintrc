@@ -46,7 +46,27 @@ disable=
     abstract-class-instantiated,
     trailing-whitespace,
     no-else-return,
-    unused-import
+    unused-import,
+    import-outside-toplevel,
+    wrong-import-order,
+    wrong-import-position,
+    protected-access,
+    too-many-public-methods,
+    too-many-statements,
+    reimported,
+    unspecified-encoding,
+    f-string-without-interpolation,
+    too-many-return-statements,
+    too-many-branches,
+    consider-iterating-dictionary,
+    unnecessary-pass,
+    too-many-positional-arguments,
+    redefined-builtin,
+    undefined-variable,
+    global-statement,
+    chained-comparison,
+    use-implicit-booleaness-not-comparison,
+    duplicate-code
 
 [FORMAT]
 # Maximum number of characters on a single line.

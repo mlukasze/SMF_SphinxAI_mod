@@ -3,12 +3,18 @@ Unit tests for SphinxAI utility modules
 """
 
 import os
+import sys
+import tempfile
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 # Add the project root to Python path for imports
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+from SphinxAI.utils.cache import SphinxAICache, redis_available
+from SphinxAI.utils.config_manager import ConfigManager
+from SphinxAI.core import constants
 
 
 class TestSphinxAIImports:
@@ -22,7 +28,6 @@ class TestSphinxAIImports:
             # Add project root (two directories up from tests/python/)
             project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
             sys.path.insert(0, project_root)
-            from SphinxAI.utils.cache import SphinxAICache
             assert SphinxAICache is not None
         except ImportError as e:
             pytest.fail(f"Failed to import SphinxAICache: {e}")
@@ -30,7 +35,6 @@ class TestSphinxAIImports:
     def test_config_manager_import(self):
         """Test that config manager module can be imported"""
         try:
-            from SphinxAI.utils.config_manager import ConfigManager
             assert ConfigManager is not None
         except ImportError:
             pytest.fail("Failed to import ConfigManager")
@@ -38,7 +42,6 @@ class TestSphinxAIImports:
     def test_constants_import(self):
         """Test that constants module can be imported"""
         try:
-            from SphinxAI.core import constants
             assert constants is not None
         except ImportError:
             # Constants module might not exist yet
@@ -51,7 +54,6 @@ class TestSphinxAIIntegration:
     @patch('SphinxAI.utils.cache.redis_available', False)
     def test_cache_without_redis_integration(self):
         """Test cache works without Redis installed"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
@@ -68,7 +70,6 @@ class TestSphinxAIIntegration:
 
     def test_config_manager_integration(self, temp_config_file):
         """Test config manager with real file"""
-        from SphinxAI.utils.config_manager import ConfigManager
 
         manager = ConfigManager(temp_config_file)
 
@@ -87,7 +88,6 @@ class TestSphinxAIErrorHandling:
 
     def test_cache_redis_connection_error(self):
         """Test cache handles Redis connection errors gracefully"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         with patch('SphinxAI.utils.cache.redis_available', True), \
              patch('SphinxAI.utils.cache.redis') as mock_redis:
@@ -110,7 +110,6 @@ class TestSphinxAIErrorHandling:
 
     def test_config_file_permission_error(self):
         """Test config manager handles file permission errors"""
-        from SphinxAI.utils.config_manager import ConfigManager
 
         with patch('os.path.exists', return_value=True), \
              patch('configparser.ConfigParser.read', side_effect=PermissionError("Access denied")):
@@ -128,7 +127,6 @@ class TestSphinxAIPerformance:
 
     def test_cache_key_generation_performance(self):
         """Test cache key generation is reasonably fast"""
-        from SphinxAI.utils.cache import SphinxAICache
         import time
 
         with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
@@ -153,7 +151,6 @@ class TestSphinxAIPerformance:
 
     def test_config_loading_performance(self, temp_config_file):
         """Test config loading is reasonably fast"""
-        from SphinxAI.utils.config_manager import ConfigManager
         import time
 
         start_time = time.time()
@@ -186,7 +183,6 @@ class TestSphinxAICompatibility:
         # Test Redis import fallback
         with patch.dict('sys.modules', {'redis': None}):
             try:
-                from SphinxAI.utils.cache import SphinxAICache, redis_available
                 assert redis_available is False
 
                 # Should still be able to create cache instance
@@ -201,7 +197,6 @@ class TestSphinxAISecurityBasics:
 
     def test_cache_key_no_injection(self):
         """Test cache keys are properly sanitized"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
@@ -222,7 +217,6 @@ class TestSphinxAISecurityBasics:
 
     def test_config_no_eval_injection(self, temp_config_file):
         """Test config values are not evaluated as code"""
-        from SphinxAI.utils.config_manager import ConfigManager
 
         # Create config with potentially dangerous values
         dangerous_config = """
@@ -231,7 +225,6 @@ host = __import__('os').system('echo "hacked"')
 user = eval('1+1')
 """
 
-        import tempfile
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False) as f:
             f.write(dangerous_config)
             f.flush()

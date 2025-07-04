@@ -3,12 +3,17 @@ Integration tests for SphinxAI modules
 """
 
 import os
-import pytest
+import sys
+import tempfile
 from unittest.mock import patch, MagicMock
 
+import pytest
+
 # Add the project root to Python path for imports
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+from SphinxAI.utils.cache import SphinxAICache
+from SphinxAI.utils.config_manager import ConfigManager
 
 
 @pytest.mark.integration
@@ -17,8 +22,6 @@ class TestSphinxAIFullIntegration:
 
     def test_cache_and_config_integration(self, temp_config_file):
         """Test cache and config manager working together"""
-        from SphinxAI.utils.cache import SphinxAICache
-        from SphinxAI.utils.config_manager import ConfigManager
 
         # Test that cache can use config manager
         cache = SphinxAICache(temp_config_file)
@@ -41,7 +44,6 @@ class TestSphinxAIFullIntegration:
     @pytest.mark.slow
     def test_cache_performance_with_large_data(self):
         """Test cache performance with larger datasets"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
@@ -72,7 +74,6 @@ class TestSphinxAIFullIntegration:
 
     def test_config_environment_override_integration(self, temp_config_file):
         """Test that environment variables properly override config file values"""
-        from SphinxAI.utils.config_manager import ConfigManager
 
         # Set environment variables
         test_env = {
@@ -103,7 +104,6 @@ class TestRedisIntegration:
     )
     def test_real_redis_operations(self):
         """Test with real Redis if available"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         # This test only runs if REDIS_URL environment variable is set
         cache = SphinxAICache()
@@ -137,7 +137,6 @@ class TestNetworkDependencies:
         # This would test downloading/loading external models
         # For now, just test that the code handles network failures gracefully
 
-        from SphinxAI.utils.cache import SphinxAICache
 
         with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
@@ -159,7 +158,6 @@ class TestErrorRecovery:
 
     def test_cache_recovery_after_connection_loss(self):
         """Test cache behavior when connection is lost and restored"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         mock_redis_client = MagicMock()
 
@@ -196,10 +194,8 @@ class TestErrorRecovery:
 
     def test_config_corruption_handling(self):
         """Test handling of corrupted configuration files"""
-        from SphinxAI.utils.config_manager import ConfigManager
 
         # Create a corrupted config file
-        import tempfile
         with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False) as f:
             f.write("This is not valid INI format [unclosed section")
             f.flush()
@@ -222,7 +218,6 @@ class TestConcurrency:
 
     def test_multiple_cache_instances(self):
         """Test multiple cache instances don't interfere"""
-        from SphinxAI.utils.cache import SphinxAICache
 
         with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
@@ -241,7 +236,6 @@ class TestConcurrency:
 
     def test_config_manager_thread_safety_simulation(self):
         """Simulate thread safety testing for config manager"""
-        from SphinxAI.utils.config_manager import ConfigManager
 
         # Test that multiple config managers can be created safely
         managers = []

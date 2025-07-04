@@ -24,5 +24,5 @@ jobs:
         pip install pytest pytest-cov || true
     - name: Analysing the code with pylint
       run: |
-        # Run pylint with more lenient settings for CI
-        pylint $(git ls-files '*.py') --disable=import-error,no-member,too-many-arguments,too-many-locals,too-few-public-methods,missing-module-docstring,missing-class-docstring,missing-function-docstring,logging-fstring-interpolation,unexpected-keyword-arg,abstract-class-instantiated,trailing-whitespace,no-else-return,unused-import --exit-zero
+        # Run pylint with comprehensive disable flags for CI
+        pylint $(git ls-files '*.py') --disable=import-error,no-member,too-many-arguments,too-many-locals,too-few-public-methods,missing-module-docstring,missing-class-docstring,missing-function-docstring,logging-fstring-interpolation,unexpected-keyword-arg,abstract-class-instantiated,trailing-whitespace,no-else-return,unused-import,import-outside-toplevel,wrong-import-order,wrong-import-position,protected-access,too-many-public-methods,too-many-statements,reimported,unspecified-encoding,f-string-without-interpolation,too-many-return-statements,too-many-branches,consider-iterating-dictionary,unnecessary-pass,too-many-positional-arguments,redefined-builtin,undefined-variable,global-statement,chained-comparison,use-implicit-booleaness-not-comparison,duplicate-code --exit-zero

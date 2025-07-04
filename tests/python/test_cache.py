@@ -2,15 +2,16 @@
 Unit tests for SphinxAI Cache Service
 """
 
-import os
-import json
-import pytest
-from unittest.mock import patch, MagicMock, Mock
-import time
 import hashlib
+import json
+import os
+import sys
+import time
+from unittest.mock import patch, MagicMock, Mock
+
+import pytest
 
 # Add the project root to Python path for imports
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
 from SphinxAI.utils.cache import SphinxAICache, cached_search, get_cache_instance

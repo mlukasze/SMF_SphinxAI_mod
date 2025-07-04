@@ -2,15 +2,18 @@
 Unit tests for SphinxAI ConfigManager
 """
 
-import os
-import tempfile
-import pytest
-from unittest.mock import patch, mock_open, MagicMock
 import configparser
+import os
+import sys
+import tempfile
+from unittest.mock import patch, mock_open, MagicMock
+
+import pytest
 
 # Add the project root to Python path for imports
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+from SphinxAI.utils.config_manager import ConfigManager
 
 from SphinxAI.utils.config_manager import ConfigManager
 

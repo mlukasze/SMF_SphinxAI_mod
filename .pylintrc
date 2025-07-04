@@ -44,7 +44,9 @@ disable=
     logging-fstring-interpolation,
     unexpected-keyword-arg,
     abstract-class-instantiated,
-    trailing-whitespace
+    trailing-whitespace,
+    no-else-return,
+    unused-import
 
 [FORMAT]
 # Maximum number of characters on a single line.

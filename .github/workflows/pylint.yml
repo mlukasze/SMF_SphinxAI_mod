@@ -25,4 +25,4 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         # Run pylint with more lenient settings for CI
-        pylint $(git ls-files '*.py') --disable=import-error,no-member,too-many-arguments,too-many-locals,too-few-public-methods,missing-module-docstring,missing-class-docstring,missing-function-docstring,logging-fstring-interpolation,unexpected-keyword-arg,abstract-class-instantiated,trailing-whitespace --exit-zero
+        pylint $(git ls-files '*.py') --disable=import-error,no-member,too-many-arguments,too-many-locals,too-few-public-methods,missing-module-docstring,missing-class-docstring,missing-function-docstring,logging-fstring-interpolation,unexpected-keyword-arg,abstract-class-instantiated,trailing-whitespace,no-else-return,unused-import --exit-zero

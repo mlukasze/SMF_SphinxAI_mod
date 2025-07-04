@@ -14,13 +14,6 @@ import time
 from typing import Dict, List, Optional, Any, TYPE_CHECKING
 from functools import wraps
 
-# Import redis with proper type checking
-if TYPE_CHECKING:
-    import redis
-    RedisClient = redis.Redis[bytes]
-else:
-    RedisClient = Any
-
 # Try to import redis at runtime
 redis_available = True
 redis = None
@@ -30,6 +23,11 @@ except ImportError:
     redis_available = False
     logging.warning("Redis module not available. Caching will be disabled.")
 
+# Import redis with proper type checking
+if TYPE_CHECKING and redis_available:
+    RedisClient = redis.Redis[bytes]
+else:
+    RedisClient = Any
 
 class SphinxAICache:
     """Cache service for SphinxAI that reads configuration from INI file"""

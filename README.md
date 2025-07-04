@@ -1,5 +1,27 @@
 # Sphinx AI Search for SMF
 
+> **⚠️ ALPHA SOFTWARE WARNING ⚠️**
+> 
+> **This project is currently in ALPHA stage and is NOT ready for production use.**
+> 
+> Please be aware that:
+> - This software is **experimental** and **under active development**
+> - It **has not been thoroughly tested** in production environments
+> - **Data loss, system instability, or security vulnerabilities** may occur
+> - **Breaking changes** may be introduced without notice
+> - **No production support** is currently available
+> 
+> **DO NOT USE THIS SOFTWARE ON PRODUCTION SYSTEMS**
+> 
+> This software is intended for:
+> - ✅ **Development and testing environments only**
+> - ✅ **Experimental installations**
+> - ✅ **Community feedback and contribution**
+> 
+> By using this software, you acknowledge and accept full responsibility for any consequences that may arise. The developers assume no liability for any damages or issues that may occur.
+> 
+> **Please wait for a stable release before considering production deployment.**
+
 A powerful AI-enhanced search plugin for Simple Machines Forum (SMF) that combines Sphinx indexing with OpenVINO-optimized language models to provide intelligent search results with summaries and source linking.
 
 ## Table of Contents

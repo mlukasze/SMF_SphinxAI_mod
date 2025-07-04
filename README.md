@@ -2,90 +2,228 @@
 
 A powerful AI-enhanced search plugin for Simple Machines Forum (SMF) that combines Sphinx indexing with OpenVINO-optimized language models to provide intelligent search results with summaries and source linking.
 
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+  - [System Requirements](#system-requirements)
+  - [Python Dependencies](#python-dependencies)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Documentation](#documentation)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+- [Support](#support)
+
 ## Features
 
-- **AI-Powered Search**: Uses Hugging Face transformers with OpenVINO optimization
-- **Intelligent Summaries**: Generates contextual summaries of search results
-- **Source Linking**: Links back to original forum posts with confidence scores
-- **Sphinx Integration**: Leverages Sphinx search daemon for efficient indexing
+### 🚀 Core Features
+- **AI-Powered Search**: Uses Hugging Face transformers with OpenVINO optimization for semantic search
+- **Intelligent Summaries**: Generates contextual summaries of search results using advanced NLP
+- **Source Linking**: Links back to original forum posts with confidence scores and relevance ranking
+- **Real-time Indexing**: Automatically indexes new posts and updates existing ones
+- **Multi-language Support**: Optimized for Polish language with configurable language models
+
+### 🔧 Technical Features
+- **Sphinx Integration**: Leverages Sphinx search daemon for efficient full-text indexing
+- **Redis Caching**: Implements Redis-based caching for improved performance
+- **Rate Limiting**: Built-in rate limiting to prevent API abuse
+- **Security**: Comprehensive security measures including CSRF protection, SQL injection prevention
+- **Performance Optimization**: Database indexes, query optimization, and model compression
+
+### 🎨 User Interface
 - **Modern UI**: Clean, responsive interface with live search suggestions
 - **Admin Dashboard**: Comprehensive administration panel for configuration and monitoring
+- **Search Analytics**: Track search patterns, popular queries, and performance metrics
+- **Mobile Support**: Fully responsive design for mobile and tablet devices
 
 ## Requirements
 
 ### System Requirements
-- SMF 2.1.* or higher
-- PHP 7.4 or higher
-- Python 3.8 or higher
-- MySQL 5.7 or higher
-- Sphinx Search daemon 2.2.11 or higher
+- **SMF**: 2.1.* or higher
+- **PHP**: 7.4+ (8.0+ recommended)
+- **Python**: 3.8+ (3.10+ recommended)
+- **MySQL**: 5.7+ or MariaDB 10.3+
+- **Sphinx Search**: 2.2.11+ (3.x recommended)
+- **Redis**: 6.0+ (for caching)
+- **Memory**: 4GB+ RAM recommended (8GB+ for large forums)
+- **Storage**: 2GB+ free space for models and indexes
 
 ### Python Dependencies
-- OpenVINO 2022.3.0+
-- PyTorch 1.12.0+
-- Transformers 4.20.0+
-- Sentence Transformers 2.2.0+
-- NumPy, SciPy, scikit-learn
-- NLTK, spaCy
-- See `SphinxAI/requirements.txt` for complete list
 
-## Installation
+#### Core Runtime Dependencies
+```
+numpy>=2.0.0,<3.0.0              # NumPy 2.x for array operations
+redis>=4.5.0                     # Redis client for caching
+sentence-transformers>=2.2.0     # Semantic embeddings (includes torch, transformers, etc.)
+openvino-genai>=2025.2.0         # OpenVINO inference optimization
+nltk>=3.7                        # Natural language processing
+spacy>=3.4.0                     # Advanced NLP pipeline
+pymysql>=1.0.2                   # MySQL connectivity for Sphinx
+requests>=2.28.0                 # HTTP client
+python-dateutil>=2.8.2           # Date utilities
+pyyaml>=6.0                      # YAML configuration parsing
+python-dotenv>=0.20.0            # Environment variables
+```
 
-### Step 1: Install SMF Plugin
-1. Download the plugin package
-2. Upload to your SMF forum directory
-3. Install through SMF Admin Panel > Packages
-4. The plugin will create necessary database tables and hooks
+#### Model Conversion Dependencies (Development Only)
+```
+optimum[openvino]>=1.14.0        # Model optimization for OpenVINO
+nncf>=2.9.0                      # Neural network compression
+```
 
-### Step 2: Setup Python Environment
+#### Development Dependencies (Optional)
+```
+pytest>=7.1.0                   # Testing framework
+pytest-cov>=3.0.0               # Coverage reporting
+black>=22.0.0                   # Code formatting
+flake8>=5.0.0                   # Linting
+```
 
-#### Automated Installation (Recommended)
+> **Note**: `sentence-transformers` automatically installs: `torch`, `transformers`, `huggingface-hub`, `scikit-learn`, `scipy`
+
+## Quick Start
+
+### 🚀 Automated Installation (Recommended)
+
 **Windows:**
-```bash
+```cmd
 install.bat
 ```
 
-**Linux/Unix:**
+**Linux/macOS:**
 ```bash
 chmod +x install.sh
 ./install.sh
 ```
 
-The automated installation will:
-- Install all Python dependencies
-- Download and convert AI models
-- Set up NLTK and spaCy data
-- Handle Hugging Face authentication (optional)
+### 📋 Manual Installation Steps
 
-#### Manual Installation
+1. **Install SMF Plugin**
+   - Upload plugin files to SMF directory
+   - Install via SMF Admin Panel > Packages
+
+2. **Setup Python Environment**
+   - Create virtual environment
+   - Install dependencies: `pip install -r SphinxAI/requirements-runtime.txt`
+
+3. **Configure Services**
+   - Setup Redis server
+   - Configure Sphinx Search daemon
+   - Download and convert AI models
+
+4. **Plugin Configuration**
+   - Access SMF Admin > Configuration > Sphinx AI Search
+   - Configure model paths and search settings
+
+## Installation
+
+For detailed installation instructions, see: **[📖 Installation Guide](docs/INSTALLATION.md)**
+
+## Configuration
+
+For configuration options and setup, see: **[⚙️ Configuration Guide](docs/CONFIGURATION.md)**
+
+## Usage
+
+For user guides and API documentation, see: **[📚 Usage Documentation](docs/USAGE.md)**
+
+## Documentation
+
+### 📚 Comprehensive Guides
+
+| Document | Description |
+|----------|-------------|
+| [📖 Installation Guide](docs/INSTALLATION.md) | Step-by-step installation instructions |
+| [⚙️ Configuration Guide](docs/CONFIGURATION.md) | Configuration options and setup |
+| [📚 Usage Documentation](docs/USAGE.md) | User guides and API documentation |
+| [🤖 Model Management](docs/MODELS.md) | Model download, conversion, and optimization |
+| [🔧 Development Guide](docs/DEVELOPMENT.md) | Development setup and contribution guidelines |
+| [🛡️ Security Guide](docs/SECURITY.md) | Security considerations and best practices |
+| [⚡ Performance Guide](docs/PERFORMANCE.md) | Performance optimization and tuning |
+| [🐛 Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+
+### 🔧 Technical Documentation
+
+- **Architecture**: Modular design with PHP controllers and Python AI services
+- **Security**: CSRF protection, SQL injection prevention, input validation
+- **Performance**: Redis caching, database optimization, model compression
+- **Compatibility**: SMF 2.1+, PHP 7.4+, Python 3.8+
+
+## Development
+
+### 🛠️ Development Setup
+
 ```bash
-cd SphinxAI
-python setup.py
+# Clone repository
+git clone https://github.com/mlukasze/SMF_SphinxAI_mod.git
+cd SMF_SphinxAI_mod
+
+# Install development dependencies
+pip install -r SphinxAI/requirements.txt
+
+# Run tests
+python -m pytest SphinxAI/tests/
 ```
 
-Or step by step:
-```bash
-pip install -r requirements.txt
-python -c "import nltk; nltk.download('punkt'); nltk.download('stopwords')"
-python -m spacy download en_core_web_sm
+### 📦 Project Structure
+
+```
+SMF_SphinxAI_mod/
+├── php/                    # PHP components
+│   ├── controllers/        # MVC controllers
+│   ├── services/          # Business logic services
+│   ├── handlers/          # Event and data handlers
+│   └── utils/             # Utility classes
+├── SphinxAI/              # Python AI components
+│   ├── core/              # Core functionality
+│   ├── handlers/          # AI model handlers
+│   ├── utils/             # Utility modules
+│   └── models/            # Model storage (created during setup)
+├── docs/                  # Documentation
+└── install.*              # Installation scripts
 ```
 
-#### Hugging Face Authentication (Optional)
-Some AI models may require a Hugging Face token for access. If prompted during installation:
+## Contributing
 
-1. Go to https://huggingface.co/settings/tokens
-2. Create a new token (read access is sufficient)
-3. Enter the token when prompted, or skip and add later
+We welcome contributions! Please see our [Development Guide](docs/DEVELOPMENT.md) for details on:
 
-You can also manually create `SphinxAI/config.ini`:
-```ini
-[huggingface]
-token = your_token_here
-```
+- Code style and standards
+- Testing requirements
+- Pull request process
+- Issue reporting
 
-### Step 3: Configure Plugin
-1. Go to SMF Admin > Modifications > Sphinx AI Search
-2. Configure model path and database settings
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+### 🆘 Getting Help
+
+- **Documentation**: Check our comprehensive [docs](docs/) folder
+- **Issues**: Report bugs via [GitHub Issues](https://github.com/mlukasze/SMF_SphinxAI_mod/issues)
+- **Discussions**: Join [GitHub Discussions](https://github.com/mlukasze/SMF_SphinxAI_mod/discussions)
+
+### 🐛 Bug Reports
+
+When reporting bugs, please include:
+- SMF version and PHP version
+- Python version and installed packages
+- Error messages and logs
+- Steps to reproduce the issue
+
+### 💡 Feature Requests
+
+We're always looking to improve! Submit feature requests via GitHub Issues with the "enhancement" label.
+
+---
+
+**Made with ❤️ for the SMF community**
+
 3. Set up Sphinx search daemon configuration
 4. Run initial indexing
 

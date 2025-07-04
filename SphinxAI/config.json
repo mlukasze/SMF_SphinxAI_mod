@@ -1,0 +1,49 @@
+{
+  "model_settings": {
+    "model_path": "",
+    "device": "CPU",
+    "max_results": 10,
+    "summary_length": 200,
+    "confidence_threshold": 0.1,
+    "embedding_model": "all-MiniLM-L6-v2"
+  },
+  "sphinx_settings": {
+    "config_path": "/etc/sphinx/sphinx.conf",
+    "host": "localhost",
+    "port": 9312,
+    "index_name": "smf_posts",
+    "searchd_pid": "/var/run/sphinx/searchd.pid",
+    "binlog_path": "/var/lib/sphinx/binlog"
+  },
+  "database_settings": {
+    "host": "localhost",
+    "port": 3306,
+    "database": "smf",
+    "user": "smf_user",
+    "password": "password",
+    "table_prefix": "smf_"
+  },
+  "indexing_settings": {
+    "batch_size": 1000,
+    "max_posts": 10000,
+    "auto_index": true,
+    "index_interval": 3600,
+    "full_reindex_interval": 86400
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/sphinx_ai.log",
+    "max_size": "10MB",
+    "backup_count": 5
+  },
+  "cache": {
+    "enabled": true,
+    "ttl": 3600,
+    "max_size": 1000
+  },
+  "security": {
+    "max_query_length": 1000,
+    "rate_limit": 100,
+    "rate_limit_window": 3600
+  }
+}

@@ -1,0 +1,59 @@
+# Python Requirements for Sphinx AI Search Plugin - NumPy 2.x only
+
+# Core dependencies - NumPy 2.x strict
+numpy>=2.0.0,<3.0.0
+
+# Machine Learning and AI - sentence-transformers automatically installs:
+# torch, transformers, huggingface-hub, scikit-learn, scipy
+sentence-transformers>=2.2.0
+
+# OpenVINO for inference optimization - openvino-genai automatically installs openvino
+openvino-genai>=2025.2.0
+
+# Model conversion dependencies (required during setup only)
+# These are needed by optimum-cli for model conversion with quantization
+optimum[openvino]>=1.14.0
+nncf>=2.9.0
+
+# Natural Language Processing
+nltk>=3.7
+spacy>=3.4.0
+
+# Database connectivity - Sphinx Search uses MySQL protocol
+pymysql>=1.0.2
+
+# Web and API
+requests>=2.28.0
+
+# Utilities
+python-dateutil>=2.8.2
+pyyaml>=6.0
+python-dotenv>=0.20.0
+
+# Development and testing (optional)
+pytest>=7.1.0
+pytest-cov>=3.0.0
+black>=22.0.0
+flake8>=5.0.0
+
+# Notes on dependencies:
+# - openvino: Automatically installed by openvino-genai with compatible version
+# - torch, transformers, huggingface-hub, scikit-learn, scipy: Automatically installed by sentence-transformers
+# - optimum[openvino]: Required for model conversion with optimum-cli during setup
+# - nncf: Required for model quantization (int4/int8) during conversion
+# - onnx, onnxruntime: Not used in codebase, OpenVINO handles inference
+# - flask: Not used, plugin integrates with SMF
+# - mysql-connector-python: Not used, only pymysql for Sphinx MySQL protocol
+
+# Note: optimum[openvino] and nncf are primarily needed during model conversion.
+# After setup is complete, they could theoretically be uninstalled, but keeping
+# them ensures users can re-convert models if needed.
+
+# Optional: GPU support for PyTorch (uncomment if needed)
+# torch>=1.12.0+cu116
+# torchvision>=0.13.0+cu116
+# torchaudio>=0.12.0+cu116
+
+# Optional: Additional NLP models (uncomment if needed)
+# spacy-transformers>=1.1.0
+# en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.4.0/en_core_web_sm-3.4.0.tar.gz

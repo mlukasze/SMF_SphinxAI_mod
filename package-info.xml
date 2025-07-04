@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
+<package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
+	<id>sphinx_ai_search</id>
+	<name>Sphinx AI Search</name>
+	<version>1.0.0</version>
+	<type>modification</type>
+	<description>AI-powered search plugin using Sphinx indexing and OpenVINO-based language model for intelligent forum search with source linking. **IMPORTANT**: After installing this SMF package, you must run the Python setup script to enable AI features.</description>
+	
+	<install for="2.1.*">
+		<readme parsebbc="true">readme.txt</readme>
+		<require-file name="SphinxAISearch.php" destination="$sourcedir" />
+		<require-file name="SphinxAISearch.template.php" destination="$themedir" />
+		<require-file name="SphinxAISearch.css" destination="$themedir/css" />
+		<require-file name="SphinxAISearch.js" destination="$themedir/scripts" />
+		<require-dir name="SphinxAI" destination="$sourcedir" />
+		
+		<hook hook="integrate_actions" function="SphinxAISearch::registerActions" />
+		<hook hook="integrate_menu_buttons" function="SphinxAISearch::addMenuButton" />
+		<hook hook="integrate_admin_areas" function="SphinxAISearch::addAdminArea" />
+		<hook hook="integrate_load_permissions" function="SphinxAISearch::loadPermissions" />
+		
+		<code type="file">install_check.php</code>
+		
+		<database>
+			<query>
+				CREATE TABLE IF NOT EXISTS {db_prefix}sphinx_ai_index (
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					topic_id INT NOT NULL,
+					post_id INT NOT NULL,
+					board_id INT NOT NULL,
+					subject VARCHAR(255) NOT NULL,
+					content TEXT NOT NULL,
+					sphinx_index TEXT,
+					embedding_vector LONGTEXT,
+					indexed_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+					INDEX idx_topic_id (topic_id),
+					INDEX idx_board_id (board_id),
+					INDEX idx_indexed_date (indexed_date)
+				);
+			</query>
+			<query>
+				CREATE TABLE IF NOT EXISTS {db_prefix}sphinx_ai_searches (
+					id INT AUTO_INCREMENT PRIMARY KEY,
+					user_id INT NOT NULL,
+					query_text TEXT NOT NULL,
+					results_count INT DEFAULT 0,
+					search_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+					INDEX idx_user_id (user_id),
+					INDEX idx_search_date (search_date)
+				);
+			</query>
+		</database>
+	</install>
+	
+	<uninstall for="2.1.*">
+		<remove-file name="$sourcedir/SphinxAISearch.php" />
+		<remove-file name="$themedir/SphinxAISearch.template.php" />
+		<remove-file name="$themedir/css/SphinxAISearch.css" />
+		<remove-file name="$themedir/scripts/SphinxAISearch.js" />
+		<remove-dir name="$sourcedir/SphinxAI" />
+		
+		<hook hook="integrate_actions" function="SphinxAISearch::registerActions" reverse="true" />
+		<hook hook="integrate_menu_buttons" function="SphinxAISearch::addMenuButton" reverse="true" />
+		<hook hook="integrate_admin_areas" function="SphinxAISearch::addAdminArea" reverse="true" />
+		<hook hook="integrate_load_permissions" function="SphinxAISearch::loadPermissions" reverse="true" />
+		
+		<database>
+			<query>DROP TABLE IF EXISTS {db_prefix}sphinx_ai_index;</query>
+			<query>DROP TABLE IF EXISTS {db_prefix}sphinx_ai_searches;</query>
+		</database>
+	</uninstall>
+</package-info>

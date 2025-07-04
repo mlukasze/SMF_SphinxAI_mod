@@ -1,0 +1,289 @@
+#
+# Sphinx Configuration for SMF AI Search Plugin
+# This is a sample configuration - adjust paths and settings for your environment
+#
+
+# Data source configuration
+source smf_posts
+{
+    type = mysql
+    
+    # Database connection settings
+    sql_host = localhost
+    sql_user = smf_user
+    sql_pass = your_password
+    sql_db = smf_database
+    sql_port = 3306
+    
+    # Character set
+    sql_query_pre = SET NAMES utf8mb4
+    sql_query_pre = SET SESSION query_cache_type=OFF
+    
+    # Main query to fetch posts
+    sql_query = \
+        SELECT \
+            sai.id, \
+            sai.topic_id, \
+            sai.post_id, \
+            sai.board_id, \
+            sai.subject, \
+            sai.content, \
+            UNIX_TIMESTAMP(sai.indexed_date) AS indexed_date, \
+            b.name AS board_name, \
+            t.num_replies, \
+            t.num_views \
+        FROM smf_sphinx_ai_index sai \
+        LEFT JOIN smf_boards b ON (b.id_board = sai.board_id) \
+        LEFT JOIN smf_topics t ON (t.id_topic = sai.topic_id) \
+        WHERE sai.id >= $start AND sai.id <= $end \
+        ORDER BY sai.id
+    
+    # Attributes (for filtering and sorting)
+    sql_attr_uint = topic_id
+    sql_attr_uint = post_id
+    sql_attr_uint = board_id
+    sql_attr_uint = num_replies
+    sql_attr_uint = num_views
+    sql_attr_timestamp = indexed_date
+    sql_attr_string = board_name
+    
+    # Range query for distributed indexing
+    sql_query_range = \
+        SELECT MIN(id), MAX(id) \
+        FROM smf_sphinx_ai_index
+    
+    # Batch size for indexing
+    sql_range_step = 1000
+    
+    # Query for deleted posts (killlist)
+    sql_query_killlist = \
+        SELECT id \
+        FROM smf_sphinx_ai_index \
+        WHERE indexed_date > NOW() - INTERVAL 1 DAY
+}
+
+# Delta source for incremental updates
+source smf_posts_delta : smf_posts
+{
+    sql_query = \
+        SELECT \
+            sai.id, \
+            sai.topic_id, \
+            sai.post_id, \
+            sai.board_id, \
+            sai.subject, \
+            sai.content, \
+            UNIX_TIMESTAMP(sai.indexed_date) AS indexed_date, \
+            b.name AS board_name, \
+            t.num_replies, \
+            t.num_views \
+        FROM smf_sphinx_ai_index sai \
+        LEFT JOIN smf_boards b ON (b.id_board = sai.board_id) \
+        LEFT JOIN smf_topics t ON (t.id_topic = sai.topic_id) \
+        WHERE sai.indexed_date > DATE_SUB(NOW(), INTERVAL 1 HOUR) \
+        ORDER BY sai.id
+    
+    sql_query_range = \
+        SELECT MIN(id), MAX(id) \
+        FROM smf_sphinx_ai_index \
+        WHERE indexed_date > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+}
+
+# Main index configuration
+index smf_posts
+{
+    source = smf_posts
+    
+    # Index file path
+    path = /var/lib/sphinx/data/smf_posts
+    
+    # Character set
+    charset_type = utf-8
+    charset_table = 0..9, A..Z->a..z, _, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F
+    
+    # Morphology settings
+    morphology = stem_en
+    
+    # Minimum word length
+    min_word_len = 2
+    
+    # Enable wildcards
+    min_prefix_len = 3
+    min_infix_len = 3
+    enable_star = 1
+    
+    # HTML processing
+    html_strip = 1
+    html_index_attrs = 
+    html_remove_elements = script, style
+    
+    # Stemming exceptions
+    exceptions = /etc/sphinx/exceptions.txt
+    
+    # Stopwords
+    stopwords = /etc/sphinx/stopwords.txt
+    
+    # Word forms
+    wordforms = /etc/sphinx/wordforms.txt
+    
+    # Phrase boundary
+    phrase_boundary = ., ?, !, U+2026 # horizontal ellipsis
+    phrase_boundary_step = 100
+    
+    # Blend characters
+    blend_chars = +, &, U+23
+    blend_mode = trim_tail, skip_pure
+    
+    # Ignore characters
+    ignore_chars = U+00AD # soft hyphen
+    
+    # N-gram settings for CJK languages
+    ngram_len = 1
+    ngram_chars = U+3000..U+2FA1F
+}
+
+# Delta index for incremental updates
+index smf_posts_delta : smf_posts
+{
+    source = smf_posts_delta
+    path = /var/lib/sphinx/data/smf_posts_delta
+}
+
+# Indexer configuration
+indexer
+{
+    # Memory limit
+    mem_limit = 512M
+    
+    # Maximum I/O operations per second
+    max_iops = 40
+    
+    # Maximum I/O size
+    max_iosize = 1048576
+    
+    # Write buffer size
+    write_buffer = 1M
+    
+    # Maximum number of XML files to process
+    max_xmlpipe2_field = 2M
+    
+    # On-disk dictionary
+    ondisk_dict = 1
+    
+    # Inplace indexing
+    inplace_enable = 1
+    inplace_hit_gap = 0
+    inplace_docinfo_gap = 0
+    inplace_reloc_factor = 0.1
+    inplace_write_factor = 0.1
+}
+
+# Search daemon configuration
+searchd
+{
+    # Network settings
+    listen = 127.0.0.1:9312
+    listen = 127.0.0.1:9306:mysql41
+    
+    # Logging
+    log = /var/log/sphinx/searchd.log
+    query_log = /var/log/sphinx/query.log
+    query_log_format = sphinxql
+    
+    # Process settings
+    pid_file = /var/run/sphinx/searchd.pid
+    
+    # Performance settings
+    read_timeout = 5
+    client_timeout = 300
+    max_children = 30
+    max_matches = 20000
+    
+    # Seamless rotation
+    seamless_rotate = 1
+    preopen_indexes = 1
+    unlink_old = 1
+    
+    # Threading
+    workers = threads
+    
+    # Binlog settings
+    binlog_path = /var/lib/sphinx/binlog
+    binlog_max_log_size = 268435456
+    binlog_flush = 2
+    
+    # MySQL compatibility
+    mysql_version_string = 5.0.37
+    
+    # Collation
+    collation_server = utf8_general_ci
+    collation_libc_locale = C
+    
+    # Plugin directory
+    plugin_dir = /usr/lib/sphinx
+    
+    # Snippets settings
+    snippets_file_prefix = /var/lib/sphinx/snippets/
+    
+    # Expansion limit
+    expansion_limit = 1000
+    
+    # RT settings
+    rt_flush_period = 900
+    rt_merge_iops = 40
+    rt_merge_maxiosize = 1M
+    
+    # Query cache
+    qcache_max_bytes = 16777216
+    qcache_thresh_msec = 3000
+    qcache_ttl_sec = 60
+    
+    # Distributed settings
+    dist_timeout = 5000
+    
+    # HA settings
+    ha_ping_interval = 1000
+    ha_ping_timeout = 1000
+    
+    # Persistent connections
+    persistent_connections_limit = 29
+    
+    # Shutdown timeout
+    shutdown_timeout = 3
+    
+    # Watchdog
+    watchdog = 1
+    
+    # Compatibility
+    compat_sphinxql_magics = 1
+    
+    # Thread stack
+    thread_stack = 128K
+    
+    # Predicted time costs
+    predicted_time_costs = doc=64, hit=48, skip=2048, match=64
+    
+    # Timezone
+    timezone = system
+}
+
+# Common settings
+common
+{
+    # Lemmatizer base
+    lemmatizer_base = /usr/share/sphinx/dicts
+    
+    # On-disk dictionary
+    ondisk_dict_default = 1
+    
+    # Progressive merge
+    progressive_merge = 1
+    
+    # Merge I/O throttling
+    merge_iops = 40
+    merge_maxiosize = 1M
+    
+    # JSON attribute support
+    json_autoconv_keynames = lowercase
+    json_autoconv_numbers = 1
+}

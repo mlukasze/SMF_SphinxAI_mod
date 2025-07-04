@@ -1,0 +1,29 @@
+[huggingface]
+# Your Hugging Face token (get from https://huggingface.co/settings/tokens)
+# Required for accessing private models or increasing download limits
+# For public models, you can leave this commented out
+token = # hf_your_token_here
+
+[model_settings]
+# Default model to use for conversion
+default_model = sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+
+# Alternative models for testing (uncomment to use)
+# default_model = sentence-transformers/all-MiniLM-L6-v2
+# default_model = sentence-transformers/distiluse-base-multilingual-cased
+
+[paths]
+# Model storage directories
+models_dir = SphinxAI/models
+original_dir = SphinxAI/models/original
+openvino_dir = SphinxAI/models/openvino
+compressed_dir = SphinxAI/models/compressed
+
+[compression]
+# NNCF compression settings
+compression_ratio_threshold = 0.1
+calibration_samples = 100
+
+[logging]
+# Logging level (DEBUG, INFO, WARNING, ERROR)
+level = INFO

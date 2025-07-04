@@ -1,0 +1,35 @@
+# Runtime-only requirements for SMF Sphinx AI Search Plugin
+# This file contains only the packages needed for the plugin to run,
+# excluding model conversion dependencies.
+
+# Core dependencies
+numpy>=2.0.0,<3.0.0
+
+# Caching
+redis>=4.5.0
+
+# Machine Learning and AI - sentence-transformers automatically installs:
+# torch, transformers, huggingface-hub, scikit-learn, scipy
+sentence-transformers>=2.2.0
+
+# OpenVINO for inference optimization - openvino-genai automatically installs openvino
+openvino-genai>=2025.2.0
+
+# Natural Language Processing
+nltk>=3.7
+spacy>=3.4.0
+
+# Database connectivity - Sphinx Search uses MySQL protocol
+pymysql>=1.0.2
+
+# Web and API
+requests>=2.28.0
+
+# Utilities
+python-dateutil>=2.8.2
+pyyaml>=6.0
+python-dotenv>=0.20.0
+
+# Note: This file excludes optimum[openvino] and nncf which are only needed
+# during model conversion. Use requirements.txt for full setup including
+# model conversion capabilities.

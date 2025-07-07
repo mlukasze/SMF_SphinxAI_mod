@@ -1,6 +1,6 @@
 # Sphinx AI Search for SMF
 
-[![Tests](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/tests.yml/badge.svg)](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/tests.yml)
+[![Tests](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/main.yml/badge.svg)](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/main.yml)
 [![Coverage](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search/branch/main/graph/badge.svg)](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search)
 [![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
 [![PHP](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://www.php.net/)
@@ -179,6 +179,7 @@ For user guides and API documentation, see: **[📚 Usage Documentation](docs/US
 | [🛡️ Security Guide](docs/SECURITY.md) | Security considerations and best practices |
 | [⚡ Performance Guide](docs/PERFORMANCE.md) | Performance optimization and tuning |
 | [🐛 Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
+| [📊 Codecov Setup](docs/CODECOV_SETUP.md) | Code coverage integration with Codecov |
 
 ### 🔧 Technical Documentation
 

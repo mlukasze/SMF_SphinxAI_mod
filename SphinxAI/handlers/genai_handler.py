@@ -442,6 +442,67 @@ class GenAIHandler(AIHandler):
             logger.error(f"Failed to enhance results: {e}")
             return results
 
+    def calculate_similarity(
+        self,
+        query_embedding: NDArray,
+        content_embeddings: NDArray,
+    ) -> Optional[NDArray]:
+        """Calculate similarity between query and content embeddings.
+
+        Args:
+            query_embedding: Query embedding
+            content_embeddings: Content embeddings
+
+        Returns:
+            Similarity scores or None if failed
+        """
+        try:
+            if not EMBEDDINGS_AVAILABLE:
+                return None
+
+            # Use cosine similarity
+            similarities = cosine_similarity([query_embedding], content_embeddings)
+            return similarities[0]  # Return 1D array of similarities
+        except Exception as e:
+            logger.error(f"Failed to calculate similarity: {e}")
+            return None
+
+    def generate_summary(self, query: str, content: str, max_length: int = 200) -> str:
+        """Generate content summary.
+
+        Args:
+            query: Search query for context
+            content: Content to summarize
+            max_length: Maximum summary length
+
+        Returns:
+            Generated summary
+        """
+        return self.summarize_content(content, query, max_length)
+
+    def preprocess_text(self, text: str) -> str:
+        """Preprocess text for AI processing.
+
+        Args:
+            text: Input text
+
+        Returns:
+            Preprocessed text
+        """
+        try:
+            # Use our existing text processing pipeline
+            normalized = normalize_polish_text(text)
+            words = normalized.split()
+            clean_words = remove_stopwords(words)
+            return " ".join(clean_words)
+        except Exception as e:
+            logger.error(f"Failed to preprocess text: {e}")
+            return text
+
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get model information and status."""
+        return self.get_status()
+
     def is_available(self) -> bool:
         """Check if GenAI handler is available and functional.
 

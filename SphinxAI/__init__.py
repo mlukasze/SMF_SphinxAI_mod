@@ -18,12 +18,12 @@ try:
     from .utils.config_manager import ConfigManager
 
     __all__ = [
-        'SphinxAICache',
-        'get_cache_instance',
-        'ConfigManager',
-        '__version__',
-        '__author__'
+        "SphinxAICache",
+        "get_cache_instance",
+        "ConfigManager",
+        "__version__",
+        "__author__",
     ]
 except ImportError:
     # Allow package to be imported even if dependencies are missing
-    __all__ = ['__version__', '__author__']
+    __all__ = ["__version__", "__author__"]

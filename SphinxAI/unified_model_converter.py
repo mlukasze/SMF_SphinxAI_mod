@@ -16,7 +16,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
@@ -43,13 +43,13 @@ class UnifiedModelConverter:
             "multilingual_mpnet": {
                 "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
                 "description": "Multilingual sentence embeddings (Polish support)",
-                "format": "openvino_ir"
+                "format": "openvino_ir",
             },
             "polish_roberta": {
                 "name": "sdadas/polish-roberta-large-v2",
                 "description": "Polish-specific embeddings",
-                "format": "openvino_ir"
-            }
+                "format": "openvino_ir",
+            },
         }
 
         # LLM models configuration (for OpenVINO GenAI)
@@ -57,32 +57,32 @@ class UnifiedModelConverter:
             "chat": {
                 "name": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
                 "format": "int4",
-                "description": "Small chat model optimized for Polish forum Q&A"
+                "description": "Small chat model optimized for Polish forum Q&A",
             },
             "summarization": {
                 "name": "microsoft/DialoGPT-medium",
                 "format": "int4",
-                "description": "Medium model for text summarization"
+                "description": "Medium model for text summarization",
             },
             "multilingual_chat": {
                 "name": "HuggingFaceH4/zephyr-7b-beta",
                 "format": "int8",
-                "description": "Multilingual chat model (larger, better quality)"
-            }
+                "description": "Multilingual chat model (larger, better quality)",
+            },
         }
 
         # Load config and Hugging Face token
         # Priority: config.ini -> HUGGING_FACE_HUB_TOKEN -> HF_TOKEN
         self.config = self._load_config()
         self.hf_token = (
-            self.config.get('huggingface', {}).get('token', '') or
-            os.environ.get('HUGGING_FACE_HUB_TOKEN', '') or
-            os.environ.get('HF_TOKEN', '')
+            self.config.get("huggingface", {}).get("token", "")
+            or os.environ.get("HUGGING_FACE_HUB_TOKEN", "")
+            or os.environ.get("HF_TOKEN", "")
         )
 
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from config file."""
-        config_path = Path(__file__).parent / 'config.ini'
+        config_path = Path(__file__).parent / "config.ini"
         if not config_path.exists():
             logger.warning(f"Config file not found: {config_path}")
             return {}
@@ -101,20 +101,20 @@ class UnifiedModelConverter:
             # Check embedding dependencies
             import sentence_transformers
             import torch
+
             logger.info("✅ Embedding conversion dependencies available")
 
             # Check LLM dependencies
             try:
                 import openvino_genai
+
                 logger.info("✅ OpenVINO GenAI available")
             except ImportError:
                 logger.warning("⚠️ OpenVINO GenAI not available for LLM conversion")
 
             # Check optimum-cli
             result = subprocess.run(
-                ["optimum-cli", "--help"],
-                capture_output=True,
-                text=True
+                ["optimum-cli", "--help"], capture_output=True, text=True
             )
             if result.returncode == 0:
                 logger.info("✅ optimum-cli available")
@@ -127,11 +127,7 @@ class UnifiedModelConverter:
             logger.error(f"❌ Missing dependencies: {e}")
             return False
 
-    def convert_embedding_model(
-        self,
-        model_key: str,
-        force: bool = False
-    ) -> bool:
+    def convert_embedding_model(self, model_key: str, force: bool = False) -> bool:
         """
         Convert embedding model to OpenVINO IR format.
 
@@ -168,8 +164,8 @@ class UnifiedModelConverter:
         try:
             # Download and save SentenceTransformer model
             model_kwargs = {}
-            if self.hf_token and not self.hf_token.startswith('#'):
-                model_kwargs['use_auth_token'] = self.hf_token.strip()
+            if self.hf_token and not self.hf_token.startswith("#"):
+                model_kwargs["use_auth_token"] = self.hf_token.strip()
 
             model = SentenceTransformer(model_name, **model_kwargs)
 
@@ -182,9 +178,7 @@ class UnifiedModelConverter:
                 from optimum.intel.openvino import OVModelForFeatureExtraction
 
                 ov_model = OVModelForFeatureExtraction.from_pretrained(
-                    model_name,
-                    export=True,
-                    **model_kwargs
+                    model_name, export=True, **model_kwargs
                 )
                 ov_model.save_pretrained(output_path / "openvino_ir")
 
@@ -192,7 +186,9 @@ class UnifiedModelConverter:
                 return True
 
             except ImportError:
-                logger.warning("Optimum Intel not available, saving SentenceTransformer only")
+                logger.warning(
+                    "Optimum Intel not available, saving SentenceTransformer only"
+                )
                 return True
 
         except Exception as e:
@@ -200,10 +196,7 @@ class UnifiedModelConverter:
             return False
 
     def convert_llm_model(
-        self,
-        model_key: str,
-        trust_remote_code: bool = True,
-        force: bool = False
+        self, model_key: str, trust_remote_code: bool = True, force: bool = False
     ) -> bool:
         """
         Convert LLM model to OpenVINO GenAI format.
@@ -242,26 +235,27 @@ class UnifiedModelConverter:
         try:
             # Build optimum-cli command
             cmd = [
-                "optimum-cli", "export", "openvino",
-                "--model", model_name,
-                "--weight-format", weight_format,
-                str(output_path)
+                "optimum-cli",
+                "export",
+                "openvino",
+                "--model",
+                model_name,
+                "--weight-format",
+                weight_format,
+                str(output_path),
             ]
 
             if trust_remote_code:
                 cmd.append("--trust-remote-code")
 
-            if self.hf_token and not self.hf_token.startswith('#'):
+            if self.hf_token and not self.hf_token.startswith("#"):
                 cmd.extend(["--token", self.hf_token.strip()])
 
             logger.info(f"Running: {' '.join(cmd)}")
 
             # Run conversion
             result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=1800  # 30 minutes timeout
+                cmd, capture_output=True, text=True, timeout=1800  # 30 minutes timeout
             )
 
             if result.returncode == 0:
@@ -332,23 +326,33 @@ class UnifiedModelConverter:
 
 def main():
     """Main function for CLI usage."""
-    parser = argparse.ArgumentParser(description="Unified Model Converter for SMF Sphinx AI")
+    parser = argparse.ArgumentParser(
+        description="Unified Model Converter for SMF Sphinx AI"
+    )
     parser.add_argument("--output-dir", default="models", help="Output directory")
     parser.add_argument("--embedding-model", help="Convert specific embedding model")
     parser.add_argument("--llm-model", help="Convert specific LLM model")
-    parser.add_argument("--all-embeddings", action="store_true", help="Convert all embedding models")
-    parser.add_argument("--all-llms", action="store_true", help="Convert all LLM models")
+    parser.add_argument(
+        "--all-embeddings", action="store_true", help="Convert all embedding models"
+    )
+    parser.add_argument(
+        "--all-llms", action="store_true", help="Convert all LLM models"
+    )
     parser.add_argument("--all", action="store_true", help="Convert all models")
     parser.add_argument("--list", action="store_true", help="List available models")
-    parser.add_argument("--force", action="store_true", help="Force conversion even if exists")
-    parser.add_argument("--cleanup", action="store_true", help="Cleanup original models")
+    parser.add_argument(
+        "--force", action="store_true", help="Force conversion even if exists"
+    )
+    parser.add_argument(
+        "--cleanup", action="store_true", help="Cleanup original models"
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
     args = parser.parse_args()
 
     # Setup logging
     level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=level, format='%(levelname)s: %(message)s')
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     converter = UnifiedModelConverter(args.output_dir)
 
@@ -379,7 +383,16 @@ def main():
     if args.cleanup:
         converter.cleanup_original_models()
 
-    if not any([args.embedding_model, args.llm_model, args.all_embeddings, args.all_llms, args.all, args.cleanup]):
+    if not any(
+        [
+            args.embedding_model,
+            args.llm_model,
+            args.all_embeddings,
+            args.all_llms,
+            args.all,
+            args.cleanup,
+        ]
+    ):
         parser.print_help()
 
     sys.exit(0 if success else 1)

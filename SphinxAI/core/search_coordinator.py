@@ -9,7 +9,7 @@ and clean architecture patterns.
 import logging
 from typing import Any, Dict, List, Optional
 
-from ..core.interfaces import SearchHandler, AIHandler, ProcessingResult, SearchResult
+from ..core.interfaces import AIHandler, ProcessingResult, SearchHandler, SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class SearchCoordinator:
         sphinx_handler: SearchHandler,
         ai_handler: Optional[AIHandler] = None,
         genai_handler: Optional[AIHandler] = None,
-        max_results: int = 10
+        max_results: int = 10,
     ):
         """
         Initialize search coordinator with dependency injection.
@@ -45,7 +45,9 @@ class SearchCoordinator:
 
         logger.info("Search coordinator initialized")
 
-    def search(self, query: str, search_options: Optional[Dict[str, Any]] = None) -> ProcessingResult:
+    def search(
+        self, query: str, search_options: Optional[Dict[str, Any]] = None
+    ) -> ProcessingResult:
         """
         Perform comprehensive search with AI enhancements.
 
@@ -60,13 +62,13 @@ class SearchCoordinator:
             return ProcessingResult(
                 success=False,
                 message="Empty query provided",
-                errors=["Query cannot be empty"]
+                errors=["Query cannot be empty"],
             )
 
         options = search_options or {}
-        search_type = options.get('type', 'hybrid')
-        use_ai_summary = options.get('use_ai_summary', True)
-        use_genai = options.get('use_genai', True)
+        search_type = options.get("type", "hybrid")
+        use_ai_summary = options.get("use_ai_summary", True)
+        use_genai = options.get("use_genai", True)
 
         try:
             logger.info(f"Processing search: '{query}' (type: {search_type})")
@@ -75,9 +77,7 @@ class SearchCoordinator:
             sphinx_results = self._get_sphinx_results(query)
             if not sphinx_results:
                 return ProcessingResult(
-                    success=True,
-                    message="No results found",
-                    data=[]
+                    success=True, message="No results found", data=[]
                 )
 
             # Step 2: Enhance with AI if available
@@ -85,39 +85,41 @@ class SearchCoordinator:
                 query,
                 sphinx_results,
                 use_ai_summary,
-                use_genai and self.genai_handler is not None
+                use_genai and self.genai_handler is not None,
             )
 
             # Step 3: Generate forum summary
-            forum_summary = self._generate_forum_summary(query, enhanced_results, use_genai)
+            forum_summary = self._generate_forum_summary(
+                query, enhanced_results, use_genai
+            )
 
             # Step 4: Compile response
             response_data = {
                 "query": query,
                 "search_type": search_type,
                 "total_results": len(enhanced_results),
-                "results": [result.to_dict() for result in enhanced_results[:self.max_results]],
+                "results": [
+                    result.to_dict() for result in enhanced_results[: self.max_results]
+                ],
                 "forum_summary": forum_summary,
                 "ai_features_used": {
                     "traditional_ai": self.ai_handler is not None,
                     "genai": use_genai and self.genai_handler is not None,
-                    "ai_summaries": use_ai_summary
-                }
+                    "ai_summaries": use_ai_summary,
+                },
             }
 
             logger.info(f"Search completed: {len(enhanced_results)} results")
             return ProcessingResult(
                 success=True,
                 message=f"Found {len(enhanced_results)} results",
-                data=response_data
+                data=response_data,
             )
 
         except Exception as e:
             logger.error(f"Search processing error: {e}")
             return ProcessingResult(
-                success=False,
-                message="Search processing failed",
-                errors=[str(e)]
+                success=False, message="Search processing failed", errors=[str(e)]
             )
 
     def _get_sphinx_results(self, query: str) -> List[Dict[str, Any]]:
@@ -133,28 +135,25 @@ class SearchCoordinator:
         query: str,
         sphinx_results: List[Dict[str, Any]],
         use_ai_summary: bool,
-        use_genai: bool
+        use_genai: bool,
     ) -> List[SearchResult]:
         """Enhance search results with AI summaries."""
         enhanced_results = []
 
         for result in sphinx_results:
             search_result = SearchResult(
-                id=result.get('id', ''),
-                title=result.get('title', ''),
-                content=result.get('content', ''),
-                url=result.get('url', ''),
-                relevance_score=result.get('weight', 0.0),
-                metadata=result
+                result.get("id", ""),  # result_id as positional argument
+                result.get("title", ""),  # title as positional argument
+                result.get("content", ""),  # content as positional argument
+                result.get("url", ""),  # url as positional argument
+                relevance_score=result.get("weight", 0.0),
+                metadata=result,
             )
 
             # Add AI summary if requested and available
             if use_ai_summary:
                 search_result.ai_summary = self._generate_summary(
-                    query,
-                    search_result.content,
-                    search_result.title,
-                    use_genai
+                    query, search_result.content, search_result.title, use_genai
                 )
 
             enhanced_results.append(search_result)
@@ -162,11 +161,7 @@ class SearchCoordinator:
         return enhanced_results
 
     def _generate_summary(
-        self,
-        query: str,
-        content: str,
-        title: str = "",
-        use_genai: bool = True
+        self, query: str, content: str, title: str = "", use_genai: bool = True
     ) -> str:
         """Generate AI summary for content."""
         full_content = f"{title} {content}" if title else content
@@ -190,10 +185,7 @@ class SearchCoordinator:
             return "Nie udało się wygenerować streszczenia."
 
     def _generate_forum_summary(
-        self,
-        query: str,
-        results: List[SearchResult],
-        use_genai: bool
+        self, query: str, results: List[SearchResult], use_genai: bool
     ) -> str:
         """Generate overall forum summary."""
         if not results:
@@ -201,7 +193,11 @@ class SearchCoordinator:
 
         try:
             # Try GenAI forum summary if available
-            if use_genai and self.genai_handler and hasattr(self.genai_handler, 'generate_forum_summary'):
+            if (
+                use_genai
+                and self.genai_handler
+                and hasattr(self.genai_handler, "generate_forum_summary")
+            ):
                 result_dicts = [result.to_dict() for result in results[:5]]
                 summary = self.genai_handler.generate_forum_summary(query, result_dicts)
                 if summary:
@@ -223,7 +219,7 @@ class SearchCoordinator:
             return content
 
         # Find sentence boundaries
-        sentences = content.split('.')
+        sentences = content.split(".")
         summary = ""
         for sentence in sentences:
             if len(summary + sentence) <= max_length:
@@ -249,7 +245,7 @@ class SearchCoordinator:
         status = {
             "coordinator": "active",
             "max_results": self.max_results,
-            "handlers": {}
+            "handlers": {},
         }
 
         # Sphinx handler status
@@ -312,12 +308,12 @@ class SearchAPIHandler:
                 return {
                     "success": False,
                     "error": validation_result.message,
-                    "errors": validation_result.errors
+                    "errors": validation_result.errors,
                 }
 
             # Extract parameters
-            query = request_data.get('query', '').strip()
-            search_options = request_data.get('options', {})
+            query = request_data.get("query", "").strip()
+            search_options = request_data.get("options", {})
 
             # Perform search
             result = self.coordinator.search(query, search_options)
@@ -327,7 +323,7 @@ class SearchAPIHandler:
                 "success": result.success,
                 "message": result.message,
                 "data": result.data,
-                "errors": result.errors
+                "errors": result.errors,
             }
 
         except Exception as e:
@@ -335,23 +331,20 @@ class SearchAPIHandler:
             return {
                 "success": False,
                 "error": "Internal server error",
-                "errors": [str(e)]
+                "errors": [str(e)],
             }
 
     def handle_status_request(self) -> Dict[str, Any]:
         """Handle system status request."""
         try:
             status = self.coordinator.get_system_status()
-            return {
-                "success": True,
-                "data": status
-            }
+            return {"success": True, "data": status}
         except Exception as e:
             logger.error(f"Status request error: {e}")
             return {
                 "success": False,
                 "error": "Failed to get system status",
-                "errors": [str(e)]
+                "errors": [str(e)],
             }
 
     def _validate_request(self, request_data: Dict[str, Any]) -> ProcessingResult:
@@ -360,24 +353,24 @@ class SearchAPIHandler:
             return ProcessingResult(
                 success=False,
                 message="Invalid request format",
-                errors=["Request must be a JSON object"]
+                errors=["Request must be a JSON object"],
             )
 
-        query = request_data.get('query', '')
+        query = request_data.get("query", "")
         if not query or not isinstance(query, str) or not query.strip():
             return ProcessingResult(
                 success=False,
                 message="Invalid query",
-                errors=["Query is required and must be a non-empty string"]
+                errors=["Query is required and must be a non-empty string"],
             )
 
         # Validate options if provided
-        options = request_data.get('options', {})
+        options = request_data.get("options", {})
         if options and not isinstance(options, dict):
             return ProcessingResult(
                 success=False,
                 message="Invalid options format",
-                errors=["Options must be a JSON object"]
+                errors=["Options must be a JSON object"],
             )
 
         return ProcessingResult(success=True, message="Request valid")
@@ -387,7 +380,7 @@ def create_search_coordinator(
     sphinx_handler: SearchHandler,
     ai_handler: Optional[AIHandler] = None,
     genai_handler: Optional[AIHandler] = None,
-    max_results: int = 10
+    max_results: int = 10,
 ) -> SearchCoordinator:
     """
     Factory function to create search coordinator.

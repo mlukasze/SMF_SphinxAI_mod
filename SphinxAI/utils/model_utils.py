@@ -9,18 +9,24 @@ This module provides utilities for converting models between different formats
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..core.constants import (
-    MODELS_DIR, ORIGINAL_DIR, OPENVINO_DIR, COMPRESSED_DIR, GENAI_DIR,
-    DEFAULT_EMBEDDING_MODEL, DEFAULT_CHAT_MODEL
+    COMPRESSED_DIR,
+    DEFAULT_CHAT_MODEL,
+    DEFAULT_EMBEDDING_MODEL,
+    GENAI_DIR,
+    MODELS_DIR,
+    OPENVINO_DIR,
+    ORIGINAL_DIR,
 )
 
 logger = logging.getLogger(__name__)
 
 try:
-    from optimum.intel import OVModelForSequenceClassification, OVModelForFeatureExtraction
-    from transformers import AutoTokenizer, AutoModel
+    from optimum.intel import OVModelForFeatureExtraction, OVModelForSequenceClassification
+    from transformers import AutoModel, AutoTokenizer
+
     OPTIMUM_AVAILABLE = True
 except ImportError:
     logger.warning("Optimum Intel not available - model conversion limited")
@@ -28,6 +34,7 @@ except ImportError:
 
 try:
     import openvino as ov
+
     OPENVINO_AVAILABLE = True
 except ImportError:
     logger.warning("OpenVINO not available - model conversion limited")
@@ -35,6 +42,7 @@ except ImportError:
 
 try:
     import openvino_genai as ov_genai
+
     GENAI_AVAILABLE = True
 except ImportError:
     logger.warning("OpenVINO GenAI not available - GenAI conversion limited")
@@ -58,11 +66,18 @@ class ModelConverter:
         self.genai_dir = self.base_dir / GENAI_DIR
 
         # Create directories if they don't exist
-        for directory in [self.models_dir, self.original_dir, self.openvino_dir,
-                         self.compressed_dir, self.genai_dir]:
+        for directory in [
+            self.models_dir,
+            self.original_dir,
+            self.openvino_dir,
+            self.compressed_dir,
+            self.genai_dir,
+        ]:
             directory.mkdir(parents=True, exist_ok=True)
 
-    def download_huggingface_model(self, model_name: str, target_dir: Optional[Path] = None) -> Tuple[bool, str]:
+    def download_huggingface_model(
+        self, model_name: str, target_dir: Optional[Path] = None
+    ) -> Tuple[bool, str]:
         """Download model from HuggingFace Hub.
 
         Args:
@@ -77,7 +92,7 @@ class ModelConverter:
 
         try:
             if target_dir is None:
-                target_dir = self.original_dir / model_name.replace('/', '_')
+                target_dir = self.original_dir / model_name.replace("/", "_")
 
             target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -96,8 +111,12 @@ class ModelConverter:
             logger.error(error_msg)
             return False, error_msg
 
-    def convert_to_openvino(self, model_path: Path, output_path: Optional[Path] = None,
-                           model_type: str = "embedding") -> Tuple[bool, str]:
+    def convert_to_openvino(
+        self,
+        model_path: Path,
+        output_path: Optional[Path] = None,
+        model_type: str = "embedding",
+    ) -> Tuple[bool, str]:
         """Convert HuggingFace model to OpenVINO format.
 
         Args:
@@ -121,13 +140,11 @@ class ModelConverter:
             # Choose appropriate converter based on model type
             if model_type == "embedding":
                 ov_model = OVModelForFeatureExtraction.from_pretrained(
-                    str(model_path),
-                    export=True
+                    str(model_path), export=True
                 )
             else:
                 ov_model = OVModelForSequenceClassification.from_pretrained(
-                    str(model_path),
-                    export=True
+                    str(model_path), export=True
                 )
 
             # Save OpenVINO model
@@ -145,8 +162,12 @@ class ModelConverter:
             logger.error(error_msg)
             return False, error_msg
 
-    def compress_openvino_model(self, model_path: Path, output_path: Optional[Path] = None,
-                               compression_ratio: float = 0.8) -> Tuple[bool, str]:
+    def compress_openvino_model(
+        self,
+        model_path: Path,
+        output_path: Optional[Path] = None,
+        compression_ratio: float = 0.8,
+    ) -> Tuple[bool, str]:
         """Compress OpenVINO model for better performance.
 
         Args:
@@ -173,6 +194,7 @@ class ModelConverter:
 
             # Apply INT8 quantization for compression
             from openvino.tools import mo
+
             compressed_model = mo.compress_model(model)
 
             # Save compressed model
@@ -190,7 +212,9 @@ class ModelConverter:
             logger.error(error_msg)
             return False, error_msg
 
-    def convert_to_genai(self, model_path: Path, output_path: Optional[Path] = None) -> Tuple[bool, str]:
+    def convert_to_genai(
+        self, model_path: Path, output_path: Optional[Path] = None
+    ) -> Tuple[bool, str]:
         """Convert model to OpenVINO GenAI format.
 
         Args:
@@ -221,7 +245,7 @@ class ModelConverter:
             logger.error(error_msg)
             return False, error_msg
 
-    def get_model_info(self, model_path: Path) -> Dict[str, any]:
+    def get_model_info(self, model_path: Path) -> Dict[str, Any]:
         """Get information about a model.
 
         Args:
@@ -231,11 +255,11 @@ class ModelConverter:
             Dictionary with model information
         """
         info = {
-            'path': str(model_path),
-            'exists': model_path.exists(),
-            'type': 'unknown',
-            'files': [],
-            'size_mb': 0
+            "path": str(model_path),
+            "exists": model_path.exists(),
+            "type": "unknown",
+            "files": [],
+            "size_mb": 0,
         }
 
         if not model_path.exists():
@@ -244,48 +268,45 @@ class ModelConverter:
         # Get file list and total size
         total_size = 0
         files = []
-        for file_path in model_path.rglob('*'):
+        for file_path in model_path.rglob("*"):
             if file_path.is_file():
                 size = file_path.stat().st_size
                 total_size += size
-                files.append({
-                    'name': file_path.name,
-                    'relative_path': str(file_path.relative_to(model_path)),
-                    'size_mb': size / 1024 / 1024
-                })
+                files.append(
+                    {
+                        "name": file_path.name,
+                        "relative_path": str(file_path.relative_to(model_path)),
+                        "size_mb": size / 1024 / 1024,
+                    }
+                )
 
-        info['files'] = files
-        info['size_mb'] = total_size / 1024 / 1024
+        info["files"] = files
+        info["size_mb"] = total_size / 1024 / 1024
 
         # Determine model type
         if (model_path / "openvino_model.xml").exists():
-            info['type'] = 'openvino'
+            info["type"] = "openvino"
         elif (model_path / "config.json").exists():
-            info['type'] = 'huggingface'
-        elif any(f['name'].endswith('.genai') for f in files):
-            info['type'] = 'genai'
+            info["type"] = "huggingface"
+        elif any(f["name"].endswith(".genai") for f in files):
+            info["type"] = "genai"
 
         return info
 
-    def list_models(self) -> Dict[str, List[Dict[str, any]]]:
+    def list_models(self) -> Dict[str, List[Dict[str, Any]]]:
         """List all available models by type.
 
         Returns:
             Dictionary with model lists by type
         """
-        model_lists = {
-            'original': [],
-            'openvino': [],
-            'compressed': [],
-            'genai': []
-        }
+        model_lists = {"original": [], "openvino": [], "compressed": [], "genai": []}
 
         # Scan each directory
         for model_type, directory in [
-            ('original', self.original_dir),
-            ('openvino', self.openvino_dir),
-            ('compressed', self.compressed_dir),
-            ('genai', self.genai_dir)
+            ("original", self.original_dir),
+            ("openvino", self.openvino_dir),
+            ("compressed", self.compressed_dir),
+            ("genai", self.genai_dir),
         ]:
             if directory.exists():
                 for model_dir in directory.iterdir():
@@ -323,13 +344,12 @@ def get_default_models() -> List[str]:
     Returns:
         List of default model identifiers
     """
-    return [
-        DEFAULT_EMBEDDING_MODEL,
-        DEFAULT_CHAT_MODEL
-    ]
+    return [DEFAULT_EMBEDDING_MODEL, DEFAULT_CHAT_MODEL]
 
 
-def install_default_models(base_dir: Optional[Path] = None) -> Dict[str, Tuple[bool, str]]:
+def install_default_models(
+    base_dir: Optional[Path] = None,
+) -> Dict[str, Tuple[bool, str]]:
     """Install default models for the system.
 
     Args:
@@ -351,7 +371,7 @@ def install_default_models(base_dir: Optional[Path] = None) -> Dict[str, Tuple[b
             continue
 
         # Convert to OpenVINO
-        model_path = converter.original_dir / model_name.replace('/', '_')
+        model_path = converter.original_dir / model_name.replace("/", "_")
         success, message = converter.convert_to_openvino(model_path)
         if not success:
             results[model_name] = (False, f"OpenVINO conversion failed: {message}")

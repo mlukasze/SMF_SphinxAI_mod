@@ -12,7 +12,7 @@ import logging
 import os
 from typing import Any, Dict, List, Optional
 
-from .core.constants import POLISH_STOPWORDS, POLISH_DIACRITICS_MAP
+from .core.constants import POLISH_DIACRITICS_MAP, POLISH_STOPWORDS
 from .utils.cache import SphinxAICache
 
 logger = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 try:
     import pymysql
     import pymysql.cursors
+
     PYMYSQL_AVAILABLE: bool = True
 except ImportError:
     logger.warning("PyMySQL not available")
@@ -66,16 +67,16 @@ class SphinxIntegrationPolish:
                 config.read(self.config_path)
 
                 # Extract searchd settings
-                if 'searchd' in config:
-                    listen = config['searchd'].get('listen', 'localhost:9306')
-                    if ':' in listen:
-                        self.searchd_host, port_str = listen.split(':')
+                if "searchd" in config:
+                    listen = config["searchd"].get("listen", "localhost:9306")
+                    if ":" in listen:
+                        self.searchd_host, port_str = listen.split(":")
                         self.searchd_port = int(port_str)
                     else:
                         self.searchd_host = listen
 
                 # Extract index settings
-                if f'index {self.index_name}' in config:
+                if f"index {self.index_name}" in config:
                     # Index configuration loaded
                     pass
 
@@ -92,7 +93,7 @@ class SphinxIntegrationPolish:
             connection = self._get_connection()
             if not connection:
                 logger.warning("Cannot detect index fields - no Sphinx connection")
-                self.available_fields = ['id', 'topic_id', 'post_id', 'board_id']
+                self.available_fields = ["id", "topic_id", "post_id", "board_id"]
                 self.content_in_index = False
                 return
 
@@ -100,7 +101,7 @@ class SphinxIntegrationPolish:
                 # Validate index name first
                 if not self._validate_index_name(self.index_name):
                     logger.error(f"Invalid index name: {self.index_name}")
-                    self.available_fields = ['id', 'topic_id', 'post_id', 'board_id']
+                    self.available_fields = ["id", "topic_id", "post_id", "board_id"]
                     self.content_in_index = False
                     return
 
@@ -111,8 +112,10 @@ class SphinxIntegrationPolish:
                     describe_query = f"DESCRIBE {escaped_index}"
                     cursor.execute(describe_query)
                     fields_info = cursor.fetchall()
-                    self.available_fields = [field['Field'] for field in fields_info]
-                    logger.info(f"Detected Sphinx index fields: {self.available_fields}")
+                    self.available_fields = [field["Field"] for field in fields_info]
+                    logger.info(
+                        f"Detected Sphinx index fields: {self.available_fields}"
+                    )
                 except Exception:
                     # If DESCRIBE doesn't work, try a sample query to detect fields
                     try:
@@ -122,36 +125,56 @@ class SphinxIntegrationPolish:
                         sample_result = cursor.fetchone()
                         if sample_result:
                             self.available_fields = list(sample_result.keys())
-                            logger.info(f"Detected fields from sample query: {self.available_fields}")
+                            logger.info(
+                                f"Detected fields from sample query: {self.available_fields}"
+                            )
                         else:
                             # Empty index, assume minimal fields
-                            self.available_fields = ['id', 'topic_id', 'post_id', 'board_id']
+                            self.available_fields = [
+                                "id",
+                                "topic_id",
+                                "post_id",
+                                "board_id",
+                            ]
                             logger.warning("Empty index, assuming minimal field set")
                     except Exception:
                         # Fallback to minimal field set
-                        self.available_fields = ['id', 'topic_id', 'post_id', 'board_id']
+                        self.available_fields = [
+                            "id",
+                            "topic_id",
+                            "post_id",
+                            "board_id",
+                        ]
                         logger.warning("Could not detect fields, using minimal set")
 
                 # Check if content fields are available
-                content_fields = ['content', 'body', 'message', 'text']
-                subject_fields = ['subject', 'title', 'topic_title']
+                content_fields = ["content", "body", "message", "text"]
+                subject_fields = ["subject", "title", "topic_title"]
 
-                self.content_in_index = any(field in self.available_fields for field in content_fields)
-                subject_in_index = any(field in self.available_fields for field in subject_fields)
+                self.content_in_index = any(
+                    field in self.available_fields for field in content_fields
+                )
+                subject_in_index = any(
+                    field in self.available_fields for field in subject_fields
+                )
 
                 if self.content_in_index:
                     logger.info("✓ Content available in Sphinx index")
                 else:
-                    logger.info("⚠ Content NOT in Sphinx index - will need SMF database queries")
+                    logger.info(
+                        "⚠ Content NOT in Sphinx index - will need SMF database queries"
+                    )
 
                 if subject_in_index:
                     logger.info("✓ Subject/title available in Sphinx index")
                 else:
-                    logger.info("⚠ Subject NOT in Sphinx index - will need SMF database queries")
+                    logger.info(
+                        "⚠ Subject NOT in Sphinx index - will need SMF database queries"
+                    )
 
         except Exception as e:
             logger.error(f"Error detecting index fields: {e}")
-            self.available_fields = ['id', 'topic_id', 'post_id', 'board_id']
+            self.available_fields = ["id", "topic_id", "post_id", "board_id"]
             self.content_in_index = False
 
     def preprocess_polish_query(self, query: str) -> str:
@@ -172,9 +195,7 @@ class SphinxIntegrationPolish:
 
         # Remove Polish stopwords
         words = processed_query.split()
-        filtered_words = [
-            word for word in words if word not in POLISH_STOPWORDS
-        ]
+        filtered_words = [word for word in words if word not in POLISH_STOPWORDS]
 
         # If all words were stopwords, return original query
         if not filtered_words:
@@ -218,9 +239,7 @@ class SphinxIntegrationPolish:
         try:
             if self.connection is None or not self.connection.open:
                 self.connection = pymysql.connect(
-                    host=self.searchd_host,
-                    port=self.searchd_port,
-                    charset='utf8'
+                    host=self.searchd_host, port=self.searchd_port, charset="utf8"
                 )
             return self.connection
         except Exception as e:
@@ -246,22 +265,21 @@ class SphinxIntegrationPolish:
 
             # Create cache key from query and limit
             cache_key_data = {
-                'query': processed_query,
-                'limit': limit,
-                'index': self.index_name,
-                'available_fields': sorted(self.available_fields)
+                "query": processed_query,
+                "limit": limit,
+                "index": self.index_name,
+                "available_fields": sorted(self.available_fields),
             }
 
             # Try to get from cache first
             cached_results = self.cache.get_cached_search_results(
-                processed_query,
-                {'limit': limit, 'index': self.index_name}
+                processed_query, {"limit": limit, "index": self.index_name}
             )
 
             if cached_results is not None:
                 logger.info(f"Cache hit for query: {query}")
                 self.cache.record_cache_hit()
-                return cached_results.get('results', [])
+                return cached_results.get("results", [])
 
             logger.info(f"Cache miss for query: {query}")
             self.cache.record_cache_miss()
@@ -273,9 +291,9 @@ class SphinxIntegrationPolish:
             if results:
                 self.cache.cache_search_results(
                     processed_query,
-                    {'limit': limit, 'index': self.index_name},
+                    {"limit": limit, "index": self.index_name},
                     results,
-                    ttl=1800  # 30 minutes for search results
+                    ttl=1800,  # 30 minutes for search results
                 )
 
             return results
@@ -300,25 +318,25 @@ class SphinxIntegrationPolish:
                 escaped_query = query.replace("'", "\\'").replace('"', '\\"')
 
                 # Build field list based on what's available in the index
-                base_fields = ['id', 'WEIGHT() as weight']
+                base_fields = ["id", "WEIGHT() as weight"]
                 optional_fields = []
 
                 # Add fields that exist in the index
-                if 'topic_id' in self.available_fields:
-                    optional_fields.append('topic_id')
-                if 'post_id' in self.available_fields:
-                    optional_fields.append('post_id')
-                if 'board_id' in self.available_fields:
-                    optional_fields.append('board_id')
+                if "topic_id" in self.available_fields:
+                    optional_fields.append("topic_id")
+                if "post_id" in self.available_fields:
+                    optional_fields.append("post_id")
+                if "board_id" in self.available_fields:
+                    optional_fields.append("board_id")
 
                 # Add content fields if available
                 if self.content_in_index:
-                    for field in ['content', 'body', 'message']:
+                    for field in ["content", "body", "message"]:
                         if field in self.available_fields:
                             optional_fields.append(field)
                             break
 
-                    for field in ['subject', 'title', 'topic_title']:
+                    for field in ["subject", "title", "topic_title"]:
                         if field in self.available_fields:
                             optional_fields.append(field)
                             break
@@ -334,9 +352,9 @@ class SphinxIntegrationPolish:
                         logger.warning(f"Skipping invalid field name: {field}")
 
                 if not safe_fields:
-                    safe_fields = ['id', 'topic_id', 'post_id', 'board_id']  # fallback
+                    safe_fields = ["id", "topic_id", "post_id", "board_id"]  # fallback
 
-                fields_str = ', '.join(safe_fields)
+                fields_str = ", ".join(safe_fields)
                 escaped_index = self._escape_identifier(self.index_name)
 
                 # Build Sphinx SQL query with parameterized MATCH clause
@@ -361,37 +379,39 @@ class SphinxIntegrationPolish:
                 results: List[Dict[str, Any]] = []
                 for row in sphinx_results:
                     result: Dict[str, Any] = {
-                        'id': row.get('id'),
-                        'topic_id': row.get('topic_id'),
-                        'post_id': row.get('post_id'),
-                        'board_id': row.get('board_id'),
-                        'weight': row.get('weight', 0),
-                        'content_in_index': self.content_in_index,
-                        'needs_content_fetch': not self.content_in_index,
-                        'attrs': {
-                            'topic_id': row.get('topic_id'),
-                            'post_id': row.get('post_id'),
-                            'board_id': row.get('board_id')
-                        }
+                        "id": row.get("id"),
+                        "topic_id": row.get("topic_id"),
+                        "post_id": row.get("post_id"),
+                        "board_id": row.get("board_id"),
+                        "weight": row.get("weight", 0),
+                        "content_in_index": self.content_in_index,
+                        "needs_content_fetch": not self.content_in_index,
+                        "attrs": {
+                            "topic_id": row.get("topic_id"),
+                            "post_id": row.get("post_id"),
+                            "board_id": row.get("board_id"),
+                        },
                     }
 
                     # Add content fields if available in index
                     if self.content_in_index:
-                        for field in ['content', 'body', 'message']:
+                        for field in ["content", "body", "message"]:
                             if field in row:
-                                result['content'] = row[field]
+                                result["content"] = row[field]
                                 break
 
-                        for field in ['subject', 'title', 'topic_title']:
+                        for field in ["subject", "title", "topic_title"]:
                             if field in row:
-                                result['subject'] = row[field]
+                                result["subject"] = row[field]
                                 break
 
                     results.append(result)
 
                 logger.info(f"Sphinx search returned {len(results)} results")
                 if results and not self.content_in_index:
-                    logger.info("Results contain only IDs - content will need to be fetched from SMF database")
+                    logger.info(
+                        "Results contain only IDs - content will need to be fetched from SMF database"
+                    )
 
                 return results
 
@@ -414,19 +434,19 @@ class SphinxIntegrationPolish:
 
             # Process each content item for Polish-specific indexing
             for item in content:
-                if 'content' in item:
+                if "content" in item:
                     # Normalize Polish diacritics for better indexing
                     normalized_content = self._normalize_polish_diacritics(
-                        item['content']
+                        item["content"]
                     )
-                    item['normalized_content'] = normalized_content
+                    item["normalized_content"] = normalized_content
 
-                if 'subject' in item:
+                if "subject" in item:
                     # Normalize subject as well
                     normalized_subject = self._normalize_polish_diacritics(
-                        item['subject']
+                        item["subject"]
                     )
-                    item['normalized_subject'] = normalized_subject
+                    item["normalized_subject"] = normalized_subject
 
             # In a real implementation, this would trigger Sphinx indexing
             # For now, we'll return True to indicate success
@@ -544,8 +564,8 @@ searchd
 """
 
         # Ensure we have Polish stopwords path
-        if 'stopwords_path' not in db_config:
-            db_config['stopwords_path'] = '/etc/sphinx/stopwords'
+        if "stopwords_path" not in db_config:
+            db_config["stopwords_path"] = "/etc/sphinx/stopwords"
 
         return config_template % db_config
 
@@ -560,13 +580,13 @@ searchd
             True if successful, False otherwise
         """
         try:
-            stopwords_file = os.path.join(path, 'polish_stopwords.txt')
+            stopwords_file = os.path.join(path, "polish_stopwords.txt")
 
             # Create directory if it doesn't exist
             os.makedirs(path, exist_ok=True)
 
             # Write Polish stopwords to file
-            with open(stopwords_file, 'w', encoding='utf-8') as f:
+            with open(stopwords_file, "w", encoding="utf-8") as f:
                 for stopword in sorted(POLISH_STOPWORDS):
                     f.write(f"{stopword}\n")
 
@@ -585,11 +605,11 @@ searchd
             Dictionary containing status information
         """
         if not PYMYSQL_AVAILABLE:
-            return {'status': 'error', 'message': 'PyMySQL not available'}
+            return {"status": "error", "message": "PyMySQL not available"}
 
         connection = self._get_connection()
         if not connection:
-            return {'status': 'error', 'message': 'Cannot connect to Sphinx'}
+            return {"status": "error", "message": "Cannot connect to Sphinx"}
 
         try:
             if PYMYSQL_AVAILABLE and pymysql is not None:
@@ -599,19 +619,19 @@ searchd
 
                     status = {}
                     for row in status_rows:
-                        status[row['Variable_name']] = row['Value']
+                        status[row["Variable_name"]] = row["Value"]
 
                     return {
-                        'status': 'ok',
-                        'sphinx_status': status,
-                        'index_name': self.index_name
+                        "status": "ok",
+                        "sphinx_status": status,
+                        "index_name": self.index_name,
                     }
             else:
-                return {'status': 'error', 'message': 'PyMySQL not available'}
+                return {"status": "error", "message": "PyMySQL not available"}
 
         except Exception as e:
             logger.error(f"Error getting Sphinx status: {e}")
-            return {'status': 'error', 'message': str(e)}
+            return {"status": "error", "message": str(e)}
 
     def close(self) -> None:
         """Close Sphinx connection."""
@@ -630,13 +650,21 @@ searchd
             True if valid, False otherwise
         """
         import re
+
         # Allow only alphanumeric characters, underscores, and dots
-        if not re.match(r'^[a-zA-Z0-9_\.]+$', index_name):
+        if not re.match(r"^[a-zA-Z0-9_\.]+$", index_name):
             return False
 
         # Check against whitelist of allowed index names
-        allowed_indexes = ['sphinx_main', 'sphinx_delta', 'forum_posts', 'smf_posts', 'main', 'delta']
-        return index_name in allowed_indexes or index_name.startswith('sphinx_')
+        allowed_indexes = [
+            "sphinx_main",
+            "sphinx_delta",
+            "forum_posts",
+            "smf_posts",
+            "main",
+            "delta",
+        ]
+        return index_name in allowed_indexes or index_name.startswith("sphinx_")
 
     def _escape_identifier(self, identifier: str) -> str:
         """
@@ -649,7 +677,7 @@ searchd
             Escaped identifier
         """
         # Remove any backticks and re-add them
-        escaped = identifier.replace('`', '').replace('"', '').replace("'", '')
+        escaped = identifier.replace("`", "").replace('"', "").replace("'", "")
         return f"`{escaped}`"
 
     def _validate_field_name(self, field_name: str) -> bool:
@@ -663,15 +691,27 @@ searchd
             True if valid, False otherwise
         """
         import re
+
         # Allow only alphanumeric characters and underscores
-        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', field_name):
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", field_name):
             return False
 
         # Check against whitelist of known safe fields
         allowed_fields = [
-            'id', 'topic_id', 'post_id', 'board_id', 'weight',
-            'content', 'body', 'message', 'subject', 'title', 'topic_title',
-            'poster_time', 'poster_name', 'board_name'
+            "id",
+            "topic_id",
+            "post_id",
+            "board_id",
+            "weight",
+            "content",
+            "body",
+            "message",
+            "subject",
+            "title",
+            "topic_title",
+            "poster_time",
+            "poster_name",
+            "board_name",
         ]
         return field_name in allowed_fields
 
@@ -690,14 +730,27 @@ searchd
 
         # Check for basic SQL injection attempts
         dangerous_patterns = [
-            ';', '--', '/*', '*/', 'union', 'select', 'insert',
-            'update', 'delete', 'drop', 'create', 'alter', 'exec'
+            ";",
+            "--",
+            "/*",
+            "*/",
+            "union",
+            "select",
+            "insert",
+            "update",
+            "delete",
+            "drop",
+            "create",
+            "alter",
+            "exec",
         ]
 
         query_lower = query.lower()
         for pattern in dangerous_patterns:
             if pattern in query_lower:
-                logger.warning(f"Potentially dangerous pattern '{pattern}' detected in query")
+                logger.warning(
+                    f"Potentially dangerous pattern '{pattern}' detected in query"
+                )
                 return False
 
         # Limit query length
@@ -724,11 +777,7 @@ class SphinxSearchHandler:
         """
         self.sphinx_integration = SphinxIntegrationPolish(config_path)
 
-    def search_content(
-        self,
-        query: str,
-        limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    def search_content(self, query: str, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Search content using Sphinx with Polish optimization.
 
@@ -745,7 +794,7 @@ class SphinxSearchHandler:
         self,
         sphinx_results: List[Dict[str, Any]],
         ai_summaries: Dict[str, str],
-        similarities: Dict[str, float]
+        similarities: Dict[str, float],
     ) -> List[Dict[str, Any]]:
         """
         Format search results with AI summaries and similarity scores.
@@ -761,28 +810,27 @@ class SphinxSearchHandler:
         formatted_results = []
 
         for result in sphinx_results:
-            result_id = str(result.get('id', ''))
+            result_id = str(result.get("id", ""))
 
             formatted_result = {
-                'id': result.get('id'),
-                'topic_id': result.get('topic_id'),
-                'post_id': result.get('post_id'),
-                'board_id': result.get('board_id'),
-                'weight': result.get('weight', 0),
-                'sphinx_score': result.get('weight', 0),
-                'ai_similarity': similarities.get(result_id, 0.0),
-                'summary': ai_summaries.get(result_id, ''),
-                'source_links': self._generate_source_links(result),
-                'confidence': self._calculate_confidence(
-                    result.get('weight', 0),
-                    similarities.get(result_id, 0.0)
-                )
+                "id": result.get("id"),
+                "topic_id": result.get("topic_id"),
+                "post_id": result.get("post_id"),
+                "board_id": result.get("board_id"),
+                "weight": result.get("weight", 0),
+                "sphinx_score": result.get("weight", 0),
+                "ai_similarity": similarities.get(result_id, 0.0),
+                "summary": ai_summaries.get(result_id, ""),
+                "source_links": self._generate_source_links(result),
+                "confidence": self._calculate_confidence(
+                    result.get("weight", 0), similarities.get(result_id, 0.0)
+                ),
             }
 
             formatted_results.append(formatted_result)
 
         # Sort by combined confidence score
-        formatted_results.sort(key=lambda x: x['confidence'], reverse=True)
+        formatted_results.sort(key=lambda x: x["confidence"], reverse=True)
 
         return formatted_results
 
@@ -796,19 +844,17 @@ class SphinxSearchHandler:
         Returns:
             List of source link dictionaries
         """
-        return [{
-            'topic_id': result.get('topic_id'),
-            'post_id': result.get('post_id'),
-            'title': f"Topic {result.get('topic_id', 'Unknown')}",
-            'board_id': result.get('board_id'),
-            'weight': result.get('weight', 0)
-        }]
+        return [
+            {
+                "topic_id": result.get("topic_id"),
+                "post_id": result.get("post_id"),
+                "title": f"Topic {result.get('topic_id', 'Unknown')}",
+                "board_id": result.get("board_id"),
+                "weight": result.get("weight", 0),
+            }
+        ]
 
-    def _calculate_confidence(
-        self,
-        sphinx_score: float,
-        ai_similarity: float
-    ) -> float:
+    def _calculate_confidence(self, sphinx_score: float, ai_similarity: float) -> float:
         """
         Calculate combined confidence score.
 

@@ -5,12 +5,12 @@ Integration tests for SphinxAI modules
 import os
 import sys
 import tempfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 # Add the project root to Python path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 # SphinxAI imports after path setup
 from SphinxAI.utils.cache import SphinxAICache
@@ -29,15 +29,15 @@ class TestSphinxAIFullIntegration:
 
         # Should have loaded config
         assert cache.config is not None
-        assert 'enabled' in cache.config
+        assert "enabled" in cache.config
 
         # Test cache operations with configuration
         if cache.is_available():
             # If Redis is available, test actual operations
             result = cache.cache_search_results(
                 query="integration test",
-                filters={'test': True},
-                results=[{'id': 1, 'title': 'Test Result'}]
+                filters={"test": True},
+                results=[{"id": 1, "title": "Test Result"}],
             )
             # Result depends on Redis availability
             assert isinstance(result, bool)
@@ -46,9 +46,9 @@ class TestSphinxAIFullIntegration:
     def test_cache_performance_with_large_data(self):
         """Test cache performance with larger datasets"""
 
-        with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
+        with patch("SphinxAI.utils.cache.ConfigManager") as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
-                'enabled': False  # Use memory for this test
+                "enabled": False  # Use memory for this test
             }
 
             cache = SphinxAICache()
@@ -56,18 +56,18 @@ class TestSphinxAIFullIntegration:
             # Test with larger datasets
             large_results = []
             for i in range(1000):
-                large_results.append({
-                    'id': i,
-                    'title': f'Test Post {i}',
-                    'content': f'Test content for post {i}' * 10,
-                    'score': 0.9 - (i * 0.0001)
-                })
+                large_results.append(
+                    {
+                        "id": i,
+                        "title": f"Test Post {i}",
+                        "content": f"Test content for post {i}" * 10,
+                        "score": 0.9 - (i * 0.0001),
+                    }
+                )
 
             # Should handle large datasets without errors
             result = cache.cache_search_results(
-                query="performance test",
-                filters={'large': True},
-                results=large_results
+                query="performance test", filters={"large": True}, results=large_results
             )
 
             # Should complete without errors
@@ -78,9 +78,9 @@ class TestSphinxAIFullIntegration:
 
         # Set environment variables
         test_env = {
-            'SPHINX_AI_CACHE_HOST': 'env-redis-host',
-            'SPHINX_AI_CACHE_PORT': '7000',
-            'SPHINX_AI_DB_HOST': 'env-db-host'
+            "SPHINX_AI_CACHE_HOST": "env-redis-host",
+            "SPHINX_AI_CACHE_PORT": "7000",
+            "SPHINX_AI_DB_HOST": "env-db-host",
         }
 
         with patch.dict(os.environ, test_env):
@@ -90,9 +90,9 @@ class TestSphinxAIFullIntegration:
             db_config = manager.get_database_config()
 
             # Environment values should override file values
-            assert cache_config['host'] == 'env-redis-host'
-            assert cache_config['port'] == 7000
-            assert db_config['host'] == 'env-db-host'
+            assert cache_config["host"] == "env-redis-host"
+            assert cache_config["port"] == 7000
+            assert db_config["host"] == "env-db-host"
 
 
 @pytest.mark.redis
@@ -100,8 +100,7 @@ class TestRedisIntegration:
     """Tests that require actual Redis connection (marked for optional running)"""
 
     @pytest.mark.skipif(
-        os.getenv('REDIS_URL') is None,
-        reason="Redis connection not available"
+        os.getenv("REDIS_URL") is None, reason="Redis connection not available"
     )
     def test_real_redis_operations(self):
         """Test with real Redis if available"""
@@ -111,22 +110,17 @@ class TestRedisIntegration:
 
         if cache.is_available():
             # Test real Redis operations
-            test_data = {'test': 'real_redis_data'}
+            test_data = {"test": "real_redis_data"}
 
             success = cache.cache_search_results(
-                query="redis test",
-                filters={},
-                results=[test_data]
+                query="redis test", filters={}, results=[test_data]
             )
 
             if success:
-                cached = cache.get_cached_search_results(
-                    query="redis test",
-                    filters={}
-                )
+                cached = cache.get_cached_search_results(query="redis test", filters={})
 
                 assert cached is not None
-                assert cached['results'] == [test_data]
+                assert cached["results"] == [test_data]
 
 
 @pytest.mark.network
@@ -138,13 +132,12 @@ class TestNetworkDependencies:
         # This would test downloading/loading external models
         # For now, just test that the code handles network failures gracefully
 
-
-        with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
+        with patch("SphinxAI.utils.cache.ConfigManager") as mock_config:
             mock_config.return_value.get_cache_config.return_value = {
-                'enabled': True,
-                'type': 'redis',
-                'host': 'nonexistent-host.example.com',  # Should fail
-                'port': 6379
+                "enabled": True,
+                "type": "redis",
+                "host": "nonexistent-host.example.com",  # Should fail
+                "port": 6379,
             }
 
             cache = SphinxAICache()
@@ -168,9 +161,7 @@ class TestErrorRecovery:
 
         # Cache operations should fail gracefully
         result = cache.cache_search_results(
-            query="test",
-            filters={},
-            results=[{'id': 1}]
+            query="test", filters={}, results=[{"id": 1}]
         )
 
         assert result is False
@@ -181,9 +172,7 @@ class TestErrorRecovery:
 
         # Operations should work again
         result = cache.cache_search_results(
-            query="test",
-            filters={},
-            results=[{'id': 1}]
+            query="test", filters={}, results=[{"id": 1}]
         )
 
         assert result is True
@@ -192,7 +181,7 @@ class TestErrorRecovery:
         """Test handling of corrupted configuration files"""
 
         # Create a corrupted config file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".ini", delete=False) as f:
             f.write("This is not valid INI format [unclosed section")
             f.flush()
 
@@ -215,10 +204,8 @@ class TestConcurrency:
     def test_multiple_cache_instances(self):
         """Test multiple cache instances don't interfere"""
 
-        with patch('SphinxAI.utils.cache.ConfigManager') as mock_config:
-            mock_config.return_value.get_cache_config.return_value = {
-                'enabled': False
-            }
+        with patch("SphinxAI.utils.cache.ConfigManager") as mock_config:
+            mock_config.return_value.get_cache_config.return_value = {"enabled": False}
 
             # Create multiple instances
             cache1 = SphinxAICache()

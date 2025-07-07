@@ -6,26 +6,26 @@ This module provides utilities for processing Polish text, including
 stopword removal, diacritics normalization, and text cleaning.
 """
 
-import re
 import logging
+import re
 from typing import List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
 # Import constants from core module
 try:
-    from ..core.constants import POLISH_STOPWORDS, POLISH_DIACRITICS_MAP, REGEX_PATTERNS
+    from ..core.constants import POLISH_DIACRITICS_MAP, POLISH_STOPWORDS, REGEX_PATTERNS
 except ImportError:
     # Fallback if core module is not available
     POLISH_STOPWORDS = set()
     POLISH_DIACRITICS_MAP = {}
     REGEX_PATTERNS = {
         "url": r'https?://[^\s<>"{}|\\^`[\]]+',
-        "email": r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
-        "bbcode": r'\[/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^\]]*)?]',
-        "html_tags": r'<[^>]+>',
-        "whitespace": r'\s+',
-        "non_alphanum": r'[^\w\s]'
+        "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
+        "bbcode": r"\[/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^\]]*)?]",
+        "html_tags": r"<[^>]+>",
+        "whitespace": r"\s+",
+        "non_alphanum": r"[^\w\s]",
     }
 
 
@@ -96,17 +96,17 @@ class PolishTextProcessor:
             return ""
 
         # Remove BBCode
-        text = self.bbcode_pattern.sub('', text)
+        text = self.bbcode_pattern.sub("", text)
 
         # Remove HTML tags
-        text = self.html_pattern.sub('', text)
+        text = self.html_pattern.sub("", text)
 
         # Remove URLs and emails
-        text = self.url_pattern.sub('', text)
-        text = self.email_pattern.sub('', text)
+        text = self.url_pattern.sub("", text)
+        text = self.email_pattern.sub("", text)
 
         # Normalize whitespace
-        text = self.whitespace_pattern.sub(' ', text)
+        text = self.whitespace_pattern.sub(" ", text)
 
         return text.strip()
 
@@ -135,7 +135,7 @@ class PolishTextProcessor:
         text = text.lower()
 
         # Remove extra whitespace
-        text = self.whitespace_pattern.sub(' ', text).strip()
+        text = self.whitespace_pattern.sub(" ", text).strip()
 
         return text
 
@@ -161,7 +161,8 @@ class PolishTextProcessor:
 
         # Filter by length and remove stopwords
         keywords = [
-            word for word in words
+            word
+            for word in words
             if len(word) >= min_length and word not in self.stopwords
         ]
 
@@ -256,13 +257,13 @@ class TextChunker:
 
     def _find_sentence_boundary(self, text: str, start: int, end: int) -> int:
         """Find the best sentence boundary within range."""
-        sentence_endings = ['.', '!', '?', '\n']
+        sentence_endings = [".", "!", "?", "\n"]
 
         for i in range(end - 1, start - 1, -1):
             if text[i] in sentence_endings:
                 # Make sure it's not a decimal number
-                if text[i] == '.' and 0 < i < len(text) - 1:
-                    if text[i-1].isdigit() and text[i+1].isdigit():
+                if text[i] == "." and 0 < i < len(text) - 1:
+                    if text[i - 1].isdigit() and text[i + 1].isdigit():
                         continue
                 return i + 1
 
@@ -295,18 +296,22 @@ def create_chunker(max_chunk_size: int = 1000, overlap: int = 100) -> TextChunke
     """
     return TextChunker(max_chunk_size, overlap)
 
+
 # Standalone utility functions for backward compatibility
+
 
 class _DefaultProcessor:
     """Singleton pattern for default processor to avoid global statement."""
+
     _instance = None
-    
+
     @classmethod
     def get_instance(cls) -> PolishTextProcessor:
         """Get default text processor instance."""
         if cls._instance is None:
             cls._instance = PolishTextProcessor()
         return cls._instance
+
 
 def get_default_processor() -> PolishTextProcessor:
     """Get default text processor instance."""

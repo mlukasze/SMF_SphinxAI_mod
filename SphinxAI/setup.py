@@ -28,7 +28,7 @@ def check_system_requirements() -> bool:
         return False
 
     # Check available commands
-    required_commands = ['pip', 'python']
+    required_commands = ["pip", "python"]
 
     for cmd in required_commands:
         if not check_command(cmd):
@@ -42,14 +42,11 @@ def check_system_requirements() -> bool:
 def check_command(command: str) -> bool:
     """Check if a command is available."""
     try:
-        subprocess.run(
-            [command, '--version'],
-            capture_output=True,
-            check=True
-        )
+        subprocess.run([command, "--version"], capture_output=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
 
 def install_python_packages():
     """Install required Python packages"""
@@ -63,12 +60,15 @@ def install_python_packages():
 
     try:
         # Upgrade pip first
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"],
-                      check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True
+        )
 
         # Install packages
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(requirements_file)],
-                      check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-r", str(requirements_file)],
+            check=True,
+        )
 
         print("✓ Python packages installed successfully")
         return True
@@ -77,16 +77,18 @@ def install_python_packages():
         print(f"Error installing packages: {e}")
         return False
 
+
 def setup_nltk_data():
     """Download required NLTK data"""
     print("Setting up NLTK data...")
 
     try:
         import nltk
-        nltk.download('punkt', quiet=True)
-        nltk.download('stopwords', quiet=True)
-        nltk.download('wordnet', quiet=True)
-        nltk.download('averaged_perceptron_tagger', quiet=True)
+
+        nltk.download("punkt", quiet=True)
+        nltk.download("stopwords", quiet=True)
+        nltk.download("wordnet", quiet=True)
+        nltk.download("averaged_perceptron_tagger", quiet=True)
 
         print("✓ NLTK data downloaded successfully")
         return True
@@ -95,14 +97,16 @@ def setup_nltk_data():
         print(f"Error setting up NLTK data: {e}")
         return False
 
+
 def setup_spacy_models():
     """Download spaCy models"""
     print("Setting up spaCy models...")
 
     try:
         # Download English model
-        subprocess.run([sys.executable, "-m", "spacy", "download", "en_core_web_sm"],
-                      check=True)
+        subprocess.run(
+            [sys.executable, "-m", "spacy", "download", "en_core_web_sm"], check=True
+        )
 
         print("✓ spaCy models downloaded successfully")
         return True
@@ -110,6 +114,7 @@ def setup_spacy_models():
     except subprocess.CalledProcessError as e:
         print(f"Error downloading spaCy models: {e}")
         return False
+
 
 def create_config_file():
     """Create default configuration file"""
@@ -120,27 +125,27 @@ def create_config_file():
             "model_path": "",
             "device": "CPU",
             "max_results": 10,
-            "summary_length": 200
+            "summary_length": 200,
         },
         "sphinx_settings": {
             "config_path": "/etc/sphinx/sphinx.conf",
             "host": "localhost",
             "port": 9312,
-            "index_name": "smf_posts"
+            "index_name": "smf_posts",
         },
         "database_settings": {
             "host": "localhost",
             "port": 3306,
             "database": "smf",
             "user": "smf_user",
-            "password": "password"
-        }
+            "password": "password",
+        },
     }
 
     config_file = Path(__file__).parent / "config.json"
 
     try:
-        with open(config_file, 'w') as f:
+        with open(config_file, "w") as f:
             json.dump(config, f, indent=2)
 
         print(f"✓ Configuration file created: {config_file}")
@@ -151,6 +156,7 @@ def create_config_file():
         print(f"Error creating configuration file: {e}")
         return False
 
+
 def setup_directories():
     """Create necessary directories"""
     print("Setting up directories...")
@@ -160,7 +166,7 @@ def setup_directories():
         base_dir / "models",
         base_dir / "cache",
         base_dir / "logs",
-        base_dir / "temp"
+        base_dir / "temp",
     ]
 
     try:
@@ -173,6 +179,7 @@ def setup_directories():
     except Exception as e:
         print(f"Error creating directories: {e}")
         return False
+
 
 def setup_models() -> bool:
     """Set up AI models using the unified model converter."""
@@ -240,23 +247,25 @@ def setup_models() -> bool:
         print(f"❌ Error setting up models: {e}")
         return False
 
+
 def test_installation():
     """Test the installation"""
     print("Testing installation...")
 
     try:
         # Test imports
+        import nltk
         import numpy
-        import torch
-        import transformers
         import sentence_transformers
         import sklearn
-        import nltk
         import spacy
+        import torch
+        import transformers
 
         # Test basic functionality
         from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer('all-MiniLM-L6-v2')
+
+        model = SentenceTransformer("all-MiniLM-L6-v2")
 
         # Test encoding
         sentences = ["This is a test sentence"]
@@ -269,11 +278,12 @@ def test_installation():
         print(f"Error during testing: {e}")
         return False
 
+
 def print_next_steps():
     """Print next steps for the user"""
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("INSTALLATION COMPLETE")
-    print("="*50)
+    print("=" * 50)
     print("\nNext steps:")
     print("1. Edit config.json with your specific settings")
     print("2. Configure your database connection")
@@ -283,14 +293,17 @@ def print_next_steps():
     print("6. Run initial indexing")
     print("\nFor detailed instructions, see the README.md file")
     print("\n✅ OpenVINO models with NNCF compression are ready!")
-    print("- Compressed model available at: SphinxAI/models/compressed/compressed_model/")
+    print(
+        "- Compressed model available at: SphinxAI/models/compressed/compressed_model/"
+    )
     print("- Model is optimized for Polish language processing")
     print("- Binary format for faster loading and inference")
+
 
 def main():
     """Main setup function"""
     print("Sphinx AI Search Setup")
-    print("="*30)
+    print("=" * 30)
 
     if not check_system_requirements():
         return 1
@@ -319,6 +332,7 @@ def main():
 
     print_next_steps()
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

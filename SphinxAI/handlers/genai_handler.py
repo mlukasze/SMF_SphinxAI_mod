@@ -13,8 +13,13 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 from numpy.typing import NDArray
 
+from ..core.constants import (
+    MAX_ANSWER_LENGTH,
+    MAX_CONTEXT_LENGTH,
+    MAX_SUMMARY_LENGTH,
+    POLISH_STOPWORDS,
+)
 from ..core.interfaces import AIHandler
-from ..core.constants import POLISH_STOPWORDS, MAX_CONTEXT_LENGTH, MAX_SUMMARY_LENGTH, MAX_ANSWER_LENGTH
 from ..utils.text_processing import normalize_polish_text, remove_stopwords
 
 logger = logging.getLogger(__name__)
@@ -22,6 +27,7 @@ logger = logging.getLogger(__name__)
 try:
     # OpenVINO GenAI imports with enhanced features
     import openvino_genai as ov_genai
+
     GENAI_AVAILABLE = True
     logger.info("OpenVINO GenAI available with advanced features")
 except ImportError:
@@ -32,6 +38,7 @@ try:
     # Fallback imports for embeddings
     from sentence_transformers import SentenceTransformer
     from sklearn.metrics.pairwise import cosine_similarity
+
     EMBEDDINGS_AVAILABLE = True
 except ImportError:
     logger.warning("Embedding libraries not available")
@@ -51,7 +58,6 @@ Zapytanie: {query}
 Treść: {content}
 
 Streszczenie:""",
-
     "answer": """Odpowiedz na pytanie użytkownika na podstawie treści z forum o nożach.
 Odpowiedz w języku polskim, w sposób zwięzły i praktyczny.
 Skup się na faktach, opiniach i doświadczeniach związanych z nożami.
@@ -60,14 +66,12 @@ Pytanie: {query}
 Kontekst z forum: {context}
 
 Odpowiedź:""",
-
     "enhance_query": """Popraw i rozszerz zapytanie o noże, dodając synonimy i powiązane terminy.
 Zwróć tylko poprawione zapytanie w języku polskim.
 
 Oryginalne zapytanie: {query}
 
 Poprawione zapytanie:""",
-
     "classify": """Klasyfikuj wpis z forum o nożach do jednej z kategorii:
 - opinie_produkty: opinie o konkretnych nożach
 - porady_techniczne: porady dotyczące używania, konserwacji
@@ -77,7 +81,7 @@ Poprawione zapytanie:""",
 
 Treść: {content}
 
-Kategoria:"""
+Kategoria:""",
 }
 
 
@@ -116,11 +120,12 @@ class GenAIHandler(AIHandler):
 
         try:
             self.generation_config = ov_genai.GenerationConfig()
-            self.generation_config.max_new_tokens = MAX_ANSWER_LENGTH
-            self.generation_config.temperature = 0.7
-            self.generation_config.top_p = 0.9
-            self.generation_config.do_sample = True
-            self.generation_config.repetition_penalty = 1.1
+            if self.generation_config is not None:
+                self.generation_config.max_new_tokens = MAX_ANSWER_LENGTH
+                self.generation_config.temperature = 0.7
+                self.generation_config.top_p = 0.9
+                self.generation_config.do_sample = True
+                self.generation_config.repetition_penalty = 1.1
         except Exception as e:
             logger.error(f"Failed to setup generation config: {e}")
 
@@ -185,7 +190,9 @@ class GenAIHandler(AIHandler):
             logger.error(f"Failed to generate text: {e}")
             return f"Generation failed: {str(e)}"
 
-    def summarize_content(self, content: str, query: str, max_length: int = MAX_SUMMARY_LENGTH) -> str:
+    def summarize_content(
+        self, content: str, query: str, max_length: int = MAX_SUMMARY_LENGTH
+    ) -> str:
         """Summarize forum content in Polish context.
 
         Args:
@@ -206,8 +213,7 @@ class GenAIHandler(AIHandler):
                 clean_content = clean_content[:MAX_CONTEXT_LENGTH] + "..."
 
             prompt = ENHANCED_POLISH_PROMPTS["summarize"].format(
-                query=clean_query,
-                content=clean_content
+                query=clean_query, content=clean_content
             )
 
             summary = self.generate_text(prompt, max_length)
@@ -215,15 +221,19 @@ class GenAIHandler(AIHandler):
             # Clean up and validate summary
             if not summary or "Generation failed" in summary:
                 # Fallback to simple truncation
-                sentences = clean_content.split('. ')
-                summary = '. '.join(sentences[:2]) + '.'
+                sentences = clean_content.split(". ")
+                summary = ". ".join(sentences[:2]) + "."
 
             return summary[:max_length] if len(summary) > max_length else summary
         except Exception as e:
             logger.error(f"Failed to summarize content: {e}")
-            return content[:max_length] + "..." if len(content) > max_length else content
+            return (
+                content[:max_length] + "..." if len(content) > max_length else content
+            )
 
-    def answer_question(self, query: str, context: str, max_length: int = MAX_ANSWER_LENGTH) -> str:
+    def answer_question(
+        self, query: str, context: str, max_length: int = MAX_ANSWER_LENGTH
+    ) -> str:
         """Answer user question based on forum context.
 
         Args:
@@ -243,8 +253,7 @@ class GenAIHandler(AIHandler):
                 clean_context = clean_context[:MAX_CONTEXT_LENGTH] + "..."
 
             prompt = ENHANCED_POLISH_PROMPTS["answer"].format(
-                query=clean_query,
-                context=clean_context
+                query=clean_query, context=clean_context
             )
 
             answer = self.generate_text(prompt, max_length)
@@ -301,7 +310,13 @@ class GenAIHandler(AIHandler):
             category = self.generate_text(prompt, 20)
 
             # Validate category
-            valid_categories = ["opinie_produkty", "porady_techniczne", "rekomendacje", "dyskusja_ogolna", "inne"]
+            valid_categories = [
+                "opinie_produkty",
+                "porady_techniczne",
+                "rekomendacje",
+                "dyskusja_ogolna",
+                "inne",
+            ]
             category = category.strip().lower()
 
             if any(cat in category for cat in valid_categories):
@@ -338,7 +353,9 @@ class GenAIHandler(AIHandler):
             logger.error(f"Failed to generate embeddings: {e}")
             return None
 
-    def process_query(self, query: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def process_query(
+        self, query: str, context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Process search query with GenAI enhancement.
 
         Args:
@@ -363,25 +380,29 @@ class GenAIHandler(AIHandler):
                 query_embedding = embeddings[0]
 
             return {
-                'original_query': query,
-                'normalized_query': normalized_query,
-                'clean_query': clean_query,
-                'enhanced_query': enhanced_query,
-                'embedding': query_embedding.tolist() if query_embedding is not None else None,
-                'context': context or {}
+                "original_query": query,
+                "normalized_query": normalized_query,
+                "clean_query": clean_query,
+                "enhanced_query": enhanced_query,
+                "embedding": (
+                    query_embedding.tolist() if query_embedding is not None else None
+                ),
+                "context": context or {},
             }
         except Exception as e:
             logger.error(f"Failed to process query: {e}")
             return {
-                'original_query': query,
-                'normalized_query': query,
-                'clean_query': query,
-                'enhanced_query': query,
-                'embedding': None,
-                'context': context or {}
+                "original_query": query,
+                "normalized_query": query,
+                "clean_query": query,
+                "enhanced_query": query,
+                "embedding": None,
+                "context": context or {},
             }
 
-    def enhance_results(self, results: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
+    def enhance_results(
+        self, results: List[Dict[str, Any]], query: str
+    ) -> List[Dict[str, Any]]:
         """Enhance search results with AI-generated content.
 
         Args:
@@ -396,21 +417,21 @@ class GenAIHandler(AIHandler):
 
             for result in results:
                 enhanced_result = result.copy()
-                content = result.get('content', result.get('body', ''))
+                content = result.get("content", result.get("body", ""))
 
                 if content:
                     # Generate AI summary
                     summary = self.summarize_content(content, query)
-                    enhanced_result['ai_summary'] = summary
+                    enhanced_result["ai_summary"] = summary
 
                     # Classify content
                     category = self.classify_content(content)
-                    enhanced_result['ai_category'] = category
+                    enhanced_result["ai_category"] = category
 
                     # Generate embeddings for similarity scoring
                     embeddings = self.generate_embeddings([content])
                     if embeddings is not None:
-                        enhanced_result['embedding'] = embeddings[0].tolist()
+                        enhanced_result["embedding"] = embeddings[0].tolist()
 
                 enhanced_results.append(enhanced_result)
 
@@ -434,11 +455,11 @@ class GenAIHandler(AIHandler):
             Status dictionary with availability and model info
         """
         return {
-            'available': self.is_available(),
-            'genai_available': GENAI_AVAILABLE,
-            'embeddings_available': EMBEDDINGS_AVAILABLE,
-            'model_loaded': self.pipe is not None,
-            'embedding_model_loaded': self.embedding_model is not None,
-            'device': self.device,
-            'model_path': str(self.model_path) if self.model_path else None
+            "available": self.is_available(),
+            "genai_available": GENAI_AVAILABLE,
+            "embeddings_available": EMBEDDINGS_AVAILABLE,
+            "model_loaded": self.pipe is not None,
+            "embedding_model_loaded": self.embedding_model is not None,
+            "device": self.device,
+            "model_path": str(self.model_path) if self.model_path else None,
         }

@@ -8,6 +8,7 @@ following the Interface Segregation Principle.
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -55,7 +56,7 @@ class AIHandler(ABC):
     def calculate_similarity(
         self,
         query_embedding: NDArray[np.float32],
-        content_embeddings: NDArray[np.float32]
+        content_embeddings: NDArray[np.float32],
     ) -> Optional[NDArray[np.float32]]:
         """
         Calculate similarity between query and content embeddings.
@@ -220,13 +221,13 @@ class SearchResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
-            'id': self.id,
-            'title': self.title,
-            'content': self.content,
-            'url': self.url,
-            'relevance_score': self.relevance_score,
-            'ai_summary': self.ai_summary,
-            'metadata': self.metadata
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "url": self.url,
+            "relevance_score": self.relevance_score,
+            "ai_summary": self.ai_summary,
+            "metadata": self.metadata,
         }
 
 
@@ -238,7 +239,7 @@ class ProcessingResult:
         success: bool,
         message: str = "",
         data: Optional[Any] = None,
-        errors: Optional[List[str]] = None
+        errors: Optional[List[str]] = None,
     ):
         self.success = success
         self.message = message
@@ -248,8 +249,8 @@ class ProcessingResult:
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
         return {
-            'success': self.success,
-            'message': self.message,
-            'data': self.data,
-            'errors': self.errors
+            "success": self.success,
+            "message": self.message,
+            "data": self.data,
+            "errors": self.errors,
         }

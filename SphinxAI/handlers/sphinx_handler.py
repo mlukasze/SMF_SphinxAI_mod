@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 try:
     import pymysql
     import pymysql.cursors
+
     PYMYSQL_AVAILABLE = True
 except ImportError:
     logger.warning("PyMySQL not available")
@@ -33,7 +34,7 @@ class SphinxSearchHandler:
         host: str = "localhost",
         port: int = 9306,
         index_name: str = "forum_posts",
-        connection_timeout: int = 10
+        connection_timeout: int = 10,
     ):
         """
         Initialize Sphinx handler.
@@ -104,7 +105,7 @@ class SphinxSearchHandler:
             "host": self.host,
             "port": self.port,
             "index": self.index_name,
-            "pymysql_available": PYMYSQL_AVAILABLE
+            "pymysql_available": PYMYSQL_AVAILABLE,
         }
 
         try:
@@ -137,10 +138,10 @@ class SphinxSearchHandler:
             self.connection = pymysql.connect(
                 host=self.host,
                 port=self.port,
-                charset='utf8mb4',
+                charset="utf8mb4",
                 cursorclass=pymysql.cursors.DictCursor,
                 connect_timeout=self.connection_timeout,
-                autocommit=True
+                autocommit=True,
             )
 
             return self.connection
@@ -159,23 +160,25 @@ class SphinxSearchHandler:
             finally:
                 self.connection = None
 
-    def _format_results(self, raw_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _format_results(
+        self, raw_results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Format raw Sphinx results."""
         formatted_results = []
 
         for result in raw_results:
             formatted_result = {
-                'id': str(result.get('id', '')),
-                'title': result.get('subject', ''),
-                'content': result.get('content', ''),
-                'weight': float(result.get('weight()', 0)),
-                'topic_id': result.get('topic_id'),
-                'post_id': result.get('post_id'),
-                'board_id': result.get('board_id'),
-                'board_name': result.get('board_name', 'Unknown'),
-                'num_replies': int(result.get('num_replies', 0)),
-                'num_views': int(result.get('num_views', 0)),
-                'url': self._generate_post_url(result)
+                "id": str(result.get("id", "")),
+                "title": result.get("subject", ""),
+                "content": result.get("content", ""),
+                "weight": float(result.get("weight()", 0)),
+                "topic_id": result.get("topic_id"),
+                "post_id": result.get("post_id"),
+                "board_id": result.get("board_id"),
+                "board_name": result.get("board_name", "Unknown"),
+                "num_replies": int(result.get("num_replies", 0)),
+                "num_views": int(result.get("num_views", 0)),
+                "url": self._generate_post_url(result),
             }
 
             formatted_results.append(formatted_result)
@@ -184,8 +187,8 @@ class SphinxSearchHandler:
 
     def _generate_post_url(self, result: Dict[str, Any]) -> str:
         """Generate URL for forum post."""
-        topic_id = result.get('topic_id')
-        post_id = result.get('post_id')
+        topic_id = result.get("topic_id")
+        post_id = result.get("post_id")
 
         if topic_id and post_id:
             return f"index.php?topic={topic_id}.msg{post_id}#msg{post_id}"
@@ -199,7 +202,7 @@ def create_sphinx_handler(
     host: str = "localhost",
     port: int = 9306,
     index_name: str = "forum_posts",
-    connection_timeout: int = 10
+    connection_timeout: int = 10,
 ) -> SphinxSearchHandler:
     """
     Factory function to create Sphinx handler.

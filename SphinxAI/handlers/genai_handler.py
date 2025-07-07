@@ -14,7 +14,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..core.constants import (
-    DEFAULT_CHAT_MODEL,
     DEFAULT_EMBEDDING_MODEL,
     ENHANCED_POLISH_PROMPTS,
     MAX_ANSWER_LENGTH,

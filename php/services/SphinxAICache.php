@@ -93,8 +93,15 @@ class SphinxAICache
      * Set cache value with TTL
      */
     private function setCache(string $key, mixed $value): void
-            error_log('SphinxAI Cache: Failed to get cache data - ' . $e->getMessage());
-            return null;
+    {
+        if (!$this->isAvailable()) {
+            return;
+        }
+        
+        try {
+            cache_put_data($key, $value, $this->ttl);
+        } catch (Exception $e) {
+            error_log('SphinxAI Cache: Failed to set cache data - ' . $e->getMessage());
         }
     }
     

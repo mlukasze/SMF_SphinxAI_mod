@@ -24,7 +24,10 @@ from ..core.constants import (
 logger = logging.getLogger(__name__)
 
 try:
-    from optimum.intel import OVModelForFeatureExtraction, OVModelForSequenceClassification
+    from optimum.intel import (
+        OVModelForFeatureExtraction,
+        OVModelForSequenceClassification,
+    )
     from transformers import AutoModel, AutoTokenizer
 
     OPTIMUM_AVAILABLE = True

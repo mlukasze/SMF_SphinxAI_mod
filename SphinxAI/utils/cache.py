@@ -19,6 +19,7 @@ redis_available = True
 redis = None
 try:
     import redis
+
     redis_available = True
     RedisType = redis.Redis
 except ImportError:

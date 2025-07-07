@@ -92,14 +92,14 @@ class SphinxAICache
     /**
      * Set cache value with TTL
      */
-    private function setCache(string $key, mixed $value): void
+    private function setCache(string $key, mixed $value, int $ttl): void
     {
         if (!$this->isAvailable()) {
             return;
         }
         
         try {
-            cache_put_data($key, $value, $this->ttl);
+            cache_put_data($key, $value, $ttl);
         } catch (Exception $e) {
             error_log('SphinxAI Cache: Failed to set cache data - ' . $e->getMessage());
         }
@@ -119,7 +119,7 @@ class SphinxAICache
             return false;
         }
         
-        $key = $this->getCacheKey('search', json_encode([
+        $key = $this->getCacheKey(CacheKeyType::SEARCH, json_encode([
             'query' => $query,
             'filters' => $filters,
             'version' => $this->getSearchVersion()
@@ -148,7 +148,7 @@ class SphinxAICache
             return null;
         }
         
-        $key = $this->getCacheKey('search', json_encode([
+        $key = $this->getCacheKey(CacheKeyType::SEARCH, json_encode([
             'query' => $query,
             'filters' => $filters,
             'version' => $this->getSearchVersion()
@@ -181,7 +181,7 @@ class SphinxAICache
             return false;
         }
         
-        $key = $this->getCacheKey('model', $modelId);
+        $key = $this->getCacheKey(CacheKeyType::MODEL, $modelId);
         $ttl = $ttl ?? (24 * 3600); // 24 hours default for model data
         
         return $this->putCache($key, $data, $ttl);
@@ -198,7 +198,7 @@ class SphinxAICache
             return null;
         }
         
-        $key = $this->getCacheKey('model', $modelId);
+        $key = $this->getCacheKey(CacheKeyType::MODEL, $modelId);
         $cached = $this->getCache($key);
         
         return ($cached === false || $cached === null) ? null : $cached;
@@ -217,7 +217,7 @@ class SphinxAICache
             return false;
         }
         
-        $key = $this->getCacheKey('suggestions', strtolower(trim($prefix)));
+        $key = $this->getCacheKey(CacheKeyType::SUGGESTIONS, strtolower(trim($prefix)));
         $ttl = $ttl ?? (6 * 3600); // 6 hours default for suggestions
         
         return $this->putCache($key, $suggestions, $ttl);
@@ -234,7 +234,7 @@ class SphinxAICache
             return null;
         }
         
-        $key = $this->getCacheKey('suggestions', strtolower(trim($prefix)));
+        $key = $this->getCacheKey(CacheKeyType::SUGGESTIONS, strtolower(trim($prefix)));
         $cached = $this->getCache($key);
         
         return ($cached === false || $cached === null) ? null : $cached;
@@ -255,7 +255,7 @@ class SphinxAICache
         
         try {
             // Get existing stats
-            $statsKey = $this->getCacheKey('stats', 'search_stats');
+            $statsKey = $this->getCacheKey(CacheKeyType::STATS, 'search_stats');
             $stats = $this->getCache($statsKey) ?: [
                 'search_count' => 0,
                 'popular_queries' => [],
@@ -327,7 +327,7 @@ class SphinxAICache
         }
         
         try {
-            $statsKey = $this->getCacheKey('stats', 'search_stats');
+            $statsKey = $this->getCacheKey(CacheKeyType::STATS, 'search_stats');
             $stats = $this->getCache($statsKey);
             
             if (!$stats) {
@@ -370,7 +370,7 @@ class SphinxAICache
     private function getCacheHitRate(): float
     {
         try {
-            $hitStatsKey = $this->getCacheKey('stats', 'cache_hits');
+            $hitStatsKey = $this->getCacheKey(CacheKeyType::STATS, 'cache_hits');
             $hitStats = $this->getCache($hitStatsKey) ?: ['hits' => 0, 'misses' => 0];
             
             $hits = $hitStats['hits'];
@@ -391,7 +391,7 @@ class SphinxAICache
     {
         if ($this->isAvailable()) {
             try {
-                $hitStatsKey = $this->getCacheKey('stats', 'cache_hits');
+                $hitStatsKey = $this->getCacheKey(CacheKeyType::STATS, 'cache_hits');
                 $hitStats = $this->getCache($hitStatsKey) ?: ['hits' => 0, 'misses' => 0];
                 $hitStats['hits']++;
                 $this->putCache($hitStatsKey, $hitStats, 24 * 3600);
@@ -408,7 +408,7 @@ class SphinxAICache
     {
         if ($this->isAvailable()) {
             try {
-                $hitStatsKey = $this->getCacheKey('stats', 'cache_hits');
+                $hitStatsKey = $this->getCacheKey(CacheKeyType::STATS, 'cache_hits');
                 $hitStats = $this->getCache($hitStatsKey) ?: ['hits' => 0, 'misses' => 0];
                 $hitStats['misses']++;
                 $this->putCache($hitStatsKey, $hitStats, 24 * 3600);
@@ -438,16 +438,16 @@ class SphinxAICache
             $typesToClear = [];
             
             if ($pattern === '*' || strpos($pattern, 'search') !== false) {
-                $typesToClear[] = 'search';
+                $typesToClear[] = CacheKeyType::SEARCH;
             }
             if ($pattern === '*' || strpos($pattern, 'model') !== false) {
-                $typesToClear[] = 'model';
+                $typesToClear[] = CacheKeyType::MODEL;
             }
             if ($pattern === '*' || strpos($pattern, 'suggestions') !== false) {
-                $typesToClear[] = 'suggestions';
+                $typesToClear[] = CacheKeyType::SUGGESTIONS;
             }
             if ($pattern === '*' || strpos($pattern, 'stats') !== false) {
-                $typesToClear[] = 'stats';
+                $typesToClear[] = CacheKeyType::STATS;
             }
             
             // Note: Since SMF cache doesn't support pattern-based clearing,
@@ -456,7 +456,7 @@ class SphinxAICache
             
             foreach ($typesToClear as $type) {
                 // Clear the main stats key for each type
-                $key = $this->prefix . self::KEY_PREFIXES[$type] . 'main';
+                $key = $this->prefix . $type->value . 'main';
                 if (function_exists('clean_cache')) {
                     clean_cache($key);
                     $cleared++;

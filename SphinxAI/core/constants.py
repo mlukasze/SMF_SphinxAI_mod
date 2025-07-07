@@ -176,6 +176,43 @@ REGEX_PATTERNS = {
 }
 
 
+# Enhanced Polish prompts for forum-specific content
+ENHANCED_POLISH_PROMPTS = {
+    "summarize": """Streć poniższy wpis z forum noży w kontekście zapytania użytkownika.
+Skup się na praktycznych informacjach o nożach, opiniach, doświadczeniach i rekomendacjach.
+Użyj maksymalnie 3-4 zdań w języku polskim.
+
+Zapytanie: {query}
+Treść: {content}
+
+Streszczenie:""",
+    "answer": """Odpowiedz na pytanie użytkownika na podstawie treści z forum o nożach.
+Odpowiedz w języku polskim, w sposób zwięzły i praktyczny.
+Skup się na faktach, opiniach i doświadczeniach związanych z nożami.
+
+Pytanie: {query}
+Kontekst z forum: {context}
+
+Odpowiedź:""",
+    "enhance_query": """Popraw i rozszerz zapytanie o noże, dodając synonimy i powiązane terminy.
+Zwróć tylko poprawione zapytanie w języku polskim.
+
+Oryginalne zapytanie: {query}
+
+Poprawione zapytanie:""",
+    "classify": """Klasyfikuj wpis z forum o nożach do jednej z kategorii:
+- opinie_produkty: opinie o konkretnych nożach
+- porady_techniczne: porady dotyczące używania, konserwacji
+- rekomendacje: rekomendacje zakupu
+- dyskusja_ogolna: ogólna dyskusja o nożach
+- inne: pozostałe treści
+
+Treść: {content}
+
+Kategoria:""",
+}
+
+
 # Configuration loading functionality
 class ConfigManager:
     """Manages configuration loading from INI and JSON files"""

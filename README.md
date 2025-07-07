@@ -9,7 +9,7 @@
 
 [![Redis](https://img.shields.io/badge/redis-6.0%2B-red.svg)](https://redis.io/)
 [![Sphinx](https://img.shields.io/badge/sphinx-3.0%2B-purple.svg)](https://sphinxsearch.com/)
-[![OpenVINO](https://img.shields.io/badge/openvino-2023.0%2B-blue.svg)](https://openvino.ai/)
+[![OpenVINO](https://img.shields.io/badge/openvino-2025.0%2B-blue.svg)](https://openvino.ai/)
 [![Transformers](https://img.shields.io/badge/transformers-4.21%2B-yellow.svg)](https://huggingface.co/transformers/)
 
 > **⚠️ ALPHA SOFTWARE WARNING ⚠️**

@@ -11,9 +11,10 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from SphinxAI.core.constants import PLUGIN_NAME, VERSION, config_manager
+from SphinxAI.core.interfaces import SearchHandler
 from SphinxAI.core.search_coordinator import SearchCoordinator
 from SphinxAI.handlers.genai_handler import GenAIHandler
 from SphinxAI.handlers.sphinx_handler import SphinxSearchHandler
@@ -55,7 +56,7 @@ def setup_handlers(config: Dict[str, Any]) -> Dict[str, Any]:
     Returns:
         Dictionary with initialized handlers
     """
-    handlers = {}
+    handlers: Dict[str, Any] = {}
 
     # Setup Sphinx handler
     sphinx_config = config.get("sphinx", {})
@@ -112,8 +113,13 @@ def handle_search(args: argparse.Namespace) -> None:
 
         # Initialize search coordinator
         ai_handlers_list = [h for k, h in handlers.items() if k != "sphinx"]
+        sphinx_handler = handlers.get("sphinx")
+        if sphinx_handler is None:
+            logger.error("Sphinx handler not available")
+            sys.exit(1)
+            
         coordinator = SearchCoordinator(
-            sphinx_handler=handlers.get("sphinx"),
+            sphinx_handler=sphinx_handler,
             ai_handler=ai_handlers_list[0] if ai_handlers_list else None,
             genai_handler=handlers.get("genai"),
         )

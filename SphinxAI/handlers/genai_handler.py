@@ -147,8 +147,11 @@ class GenAIHandler(AIHandler):
             if max_tokens and self.generation_config:
                 self.generation_config.max_new_tokens = max_tokens
 
-            result = self.pipe.generate(prompt, self.generation_config)
-            return result.strip()
+            if self.pipe is not None:
+                result = self.pipe.generate(prompt, self.generation_config)
+                return result.strip()
+            else:
+                return "Model not available"
         except Exception as e:
             logger.error(f"Failed to generate text: {e}")
             return f"Generation failed: {str(e)}"
@@ -311,8 +314,11 @@ class GenAIHandler(AIHandler):
                 without_stopwords = remove_stopwords(words)
                 processed_texts.append(" ".join(without_stopwords))
 
-            embeddings = self.embedding_model.encode(processed_texts)
-            return embeddings
+            if self.embedding_model is not None:
+                embeddings = self.embedding_model.encode(processed_texts)
+                return embeddings
+            else:
+                return None
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")
             return None

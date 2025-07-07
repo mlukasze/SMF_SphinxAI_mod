@@ -291,7 +291,7 @@ class ModelConverter:
             info["type"] = "openvino"
         elif (model_path / "config.json").exists():
             info["type"] = "huggingface"
-        elif any(f["name"].endswith(".genai") for f in files):
+        elif any(f["name"].endswith(".genai") for f in files if isinstance(f, dict) and "name" in f):
             info["type"] = "genai"
 
         return info
@@ -302,7 +302,7 @@ class ModelConverter:
         Returns:
             Dictionary with model lists by type
         """
-        model_lists = {"original": [], "openvino": [], "compressed": [], "genai": []}
+        model_lists: Dict[str, List[Dict[str, Any]]] = {"original": [], "openvino": [], "compressed": [], "genai": []}
 
         # Scan each directory
         for model_type, directory in [

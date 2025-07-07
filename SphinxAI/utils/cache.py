@@ -16,15 +16,15 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 # Try to import redis at runtime
 redis_available = True
-redis = None
+redis_module: Optional[Any] = None
 try:
-    import redis
+    import redis as redis_module
 
     redis_available = True
-    RedisType = redis.Redis
+    RedisType = redis_module.Redis
 except ImportError:
     redis_available = False
-    RedisType = None
+    RedisType = type(None)
     logging.warning("Redis module not available. Caching will be disabled.")
 
 # Import redis with proper type checking
@@ -116,13 +116,13 @@ class SphinxAICache:
         Returns:
             bool: True if connection successful
         """
-        if not redis_available or redis is None:
+        if not redis_available or redis_module is None:
             self.logger.warning("Redis not available, caching disabled")
             return False
 
         try:
             # Create Redis connection pool
-            pool = redis.ConnectionPool(  # type: ignore
+            pool = redis_module.ConnectionPool(  # type: ignore
                 host=self.config["host"],
                 port=self.config["port"],
                 password=self.config["password"],
@@ -135,7 +135,7 @@ class SphinxAICache:
             )
 
             if redis_available:
-                self.redis_client = redis.Redis(connection_pool=pool)  # type: ignore
+                self.redis_client = redis_module.Redis(connection_pool=pool)  # type: ignore
             else:
                 raise ImportError("Redis not available")
 

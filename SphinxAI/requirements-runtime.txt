@@ -1,6 +1,7 @@
 # Runtime-only requirements for SMF Sphinx AI Search Plugin
 # This file contains only the packages needed for the plugin to run,
 # excluding model conversion dependencies.
+# Requires Python 3.10+ for NumPy 2.x compatibility
 
 # Core dependencies
 numpy>=2.0.0,<3.0.0

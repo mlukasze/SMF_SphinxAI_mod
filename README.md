@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/main.yml/badge.svg)](https://github.com/mlukasze/smf-sphinx-ai-search/actions/workflows/main.yml)
 [![Coverage](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search/branch/main/graph/badge.svg)](https://codecov.io/gh/mlukasze/smf-sphinx-ai-search)
-[![Python](https://img.shields.io/badge/python-3.7%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![PHP](https://img.shields.io/badge/php-8.1%2B-blue.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![SMF](https://img.shields.io/badge/SMF-2.1%2B-orange.svg)](https://www.simplemachines.org/)
@@ -79,7 +79,7 @@ A powerful AI-enhanced search plugin for Simple Machines Forum (SMF) that combin
 ### System Requirements
 - **SMF**: 2.1.* or higher
 - **PHP**: 8.1+ (8.2+ recommended) - Leverages modern PHP features including enums, union types, constructor property promotion, and readonly properties
-- **Python**: 3.8+ (3.10+ recommended)
+- **Python**: 3.10+ (3.11+ recommended)
 - **MySQL**: 5.7+ or MariaDB 10.3+
 - **Sphinx Search**: 2.2.11+ (3.x recommended)
 - **Redis**: 6.0+ (for caching)

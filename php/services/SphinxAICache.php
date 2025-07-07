@@ -88,16 +88,11 @@ class SphinxAICache
             return null;
         }
     }
+
+    /**
+     * Set cache value with TTL
      */
-    private function getCache(string $key)
-    {
-        if (!$this->isAvailable()) {
-            return null;
-        }
-        
-        try {
-            return cache_get_data($key);
-        } catch (Exception $e) {
+    private function setCache(string $key, mixed $value): void
             error_log('SphinxAI Cache: Failed to get cache data - ' . $e->getMessage());
             return null;
         }

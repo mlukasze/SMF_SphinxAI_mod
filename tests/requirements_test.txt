@@ -1,4 +1,5 @@
 # Python Testing Dependencies for SMF Sphinx AI Search Plugin
+# Requires Python 3.10+ for NumPy 2.x and modern dependency compatibility
 
 # Core testing framework
 pytest>=7.4.0

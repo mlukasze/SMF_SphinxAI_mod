@@ -163,7 +163,7 @@ class UnifiedModelConverter:
 
         try:
             # Download and save SentenceTransformer model
-            model_kwargs = {}
+            model_kwargs: Dict[str, Any] = {}
             if self.hf_token and not self.hf_token.startswith("#"):
                 model_kwargs["use_auth_token"] = self.hf_token.strip()
 

@@ -17,7 +17,6 @@ from ..core.constants import (
     MAX_ANSWER_LENGTH,
     MAX_CONTEXT_LENGTH,
     MAX_SUMMARY_LENGTH,
-    POLISH_STOPWORDS,
 )
 from ..core.interfaces import AIHandler
 from ..utils.text_processing import normalize_polish_text, remove_stopwords
@@ -98,8 +97,8 @@ class GenAIHandler(AIHandler):
         self.model_path = Path(model_path) if model_path else None
         self.device = device
         self.pipe = None
-        self.embedding_model = None
-        self.generation_config = None
+        self.embedding_model: Optional[Any] = None  # SentenceTransformer
+        self.generation_config: Optional[Any] = None  # OpenVINO GenAI GenerationConfig
 
         if not GENAI_AVAILABLE:
             logger.error("OpenVINO GenAI not available - handler will be limited")
@@ -344,8 +343,9 @@ class GenAIHandler(AIHandler):
             processed_texts = []
             for text in texts:
                 normalized = normalize_polish_text(text)
-                without_stopwords = remove_stopwords(normalized, POLISH_STOPWORDS)
-                processed_texts.append(without_stopwords)
+                words = normalized.split()
+                without_stopwords = remove_stopwords(words)
+                processed_texts.append(" ".join(without_stopwords))
 
             embeddings = self.embedding_model.encode(processed_texts)
             return embeddings
@@ -368,7 +368,9 @@ class GenAIHandler(AIHandler):
         try:
             # Basic processing
             normalized_query = normalize_polish_text(query)
-            clean_query = remove_stopwords(normalized_query, POLISH_STOPWORDS)
+            query_words = normalized_query.split()
+            clean_words = remove_stopwords(query_words)
+            clean_query = " ".join(clean_words)
 
             # AI enhancements
             enhanced_query = self.enhance_query(query)

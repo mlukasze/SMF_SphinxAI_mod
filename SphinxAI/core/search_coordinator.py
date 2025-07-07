@@ -242,7 +242,7 @@ class SearchCoordinator:
 
     def get_system_status(self) -> Dict[str, Any]:
         """Get status of all system components."""
-        status = {
+        status: Dict[str, Any] = {
             "coordinator": "active",
             "max_results": self.max_results,
             "handlers": {},

@@ -49,7 +49,7 @@ class SphinxIntegrationPolish:
         self.searchd_port = 9306  # Default Sphinx MySQL port
         self.index_name = "smf_polish_posts"
         self.connection = None
-        self.available_fields = []  # Cache for detected fields
+        self.available_fields: List[str] = []  # Cache for detected fields
         self.content_in_index = False  # Flag for content availability
         self.cache = SphinxAICache()  # Initialize cache service
 

@@ -19,13 +19,19 @@ redis_available = True
 redis = None
 try:
     import redis
+    redis_available = True
+    RedisType = redis.Redis
 except ImportError:
     redis_available = False
+    RedisType = None
     logging.warning("Redis module not available. Caching will be disabled.")
 
 # Import redis with proper type checking
-if TYPE_CHECKING and redis_available:
-    RedisClient = redis.Redis[bytes]
+if TYPE_CHECKING:
+    if redis_available:
+        from redis import Redis as RedisClient  # type: ignore
+    else:
+        RedisClient = Any
 else:
     RedisClient = Any
 
@@ -127,10 +133,14 @@ class SphinxAICache:
                 health_check_interval=30,
             )
 
-            self.redis_client = redis.Redis(connection_pool=pool)  # type: ignore
+            if redis_available:
+                self.redis_client = redis.Redis(connection_pool=pool)  # type: ignore
+            else:
+                raise ImportError("Redis not available")
 
             # Test connection
-            self.redis_client.ping()  # type: ignore
+            if self.redis_client:
+                self.redis_client.ping()  # type: ignore
             self.is_connected = True
 
             self.logger.info("Successfully connected to Redis")

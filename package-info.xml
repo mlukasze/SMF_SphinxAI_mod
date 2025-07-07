@@ -3,7 +3,7 @@
 <package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
 	<id>sphinx_ai_search</id>
 	<name>Sphinx AI Search</name>
-	<version>1.0.0</version>
+	<version>0.3.0</version>
 	<type>modification</type>
 	<description>AI-powered search plugin using Sphinx indexing and OpenVINO-based language model for intelligent forum search with source linking. **IMPORTANT**: After installing this SMF package, you must run the Python setup script to enable AI features.</description>
 	

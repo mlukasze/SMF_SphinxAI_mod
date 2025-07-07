@@ -5,7 +5,7 @@ All notable changes to the SMF Sphinx AI Search Plugin are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.0] - 2025-07-04
+## [0.3.0] - 2025-07-04
 
 ### 🚀 Major Release: PHP 8.1+ Modernization
 
@@ -92,19 +92,19 @@ This major release completely modernizes the codebase to leverage PHP 8.1+ featu
 - **Updated**: All development tools updated for PHP 8.1+
 - **Updated**: Test infrastructure modernized
 
-## [1.5.0] - Previous Release (PHP 7.4+)
+## [0.2.0] - Previous Release (PHP 7.4+)
 
 ### Legacy Version Information
-The 1.x series supports PHP 7.4+ and maintains compatibility with older PHP versions. For production systems that cannot upgrade to PHP 8.1+, please use the latest 1.x release.
+The 0.2.x series supports PHP 7.4+ and maintains compatibility with older PHP versions. For production systems that cannot upgrade to PHP 8.1+, please use the latest 0.2.x release.
 
 ### Support Notice
-- **PHP 7.x Support**: Ended with version 1.5.0
-- **Security Updates**: Only provided for PHP 8.1+ versions (2.0+)
-- **New Features**: Only available in PHP 8.1+ versions (2.0+)
+- **PHP 7.x Support**: Ended with version 0.2.0
+- **Security Updates**: Only provided for PHP 8.1+ versions (0.3+)
+- **New Features**: Only available in PHP 8.1+ versions (0.3+)
 
 ## Migration Guide
 
-For detailed migration instructions from 1.x to 2.0, see:
+For detailed migration instructions from 0.2.x to 0.3.0, see:
 - [PHP 8.1+ Upgrade Guide](docs/PHP_UPGRADE_GUIDE.md)
 - [Configuration Migration](docs/CONFIGURATION.md#migration-from-1x)
 - [Troubleshooting](docs/TROUBLESHOOTING.md#php-81-upgrade-issues)
@@ -113,20 +113,20 @@ For detailed migration instructions from 1.x to 2.0, see:
 
 | Plugin Version | PHP Version | Support Status | Security Updates |
 |----------------|-------------|----------------|------------------|
-| 2.0+           | 8.1+        | ✅ Active      | ✅ Yes           |
-| 1.5.x          | 7.4-8.0     | ⚠️ Legacy      | ❌ No            |
-| 1.4.x          | 7.4-8.0     | ❌ EOL         | ❌ No            |
+| 0.3+           | 8.1+        | ✅ Active      | ✅ Yes           |
+| 0.2.x          | 7.4-8.0     | ⚠️ Legacy      | ❌ No            |
+| 0.1.x          | 7.4-8.0     | ❌ EOL         | ❌ No            |
 
 ## Breaking Changes Summary
 
 ### Configuration
 ```php
-// Before (v1.x)
+// Before (v0.2.x)
 if ($cache_type === SPHINX_AI_CACHE_REDIS) {
     // ...
 }
 
-// After (v2.0+)
+// After (v0.3+)
 if ($cache_type === CacheType::REDIS) {
     // ...
 }
@@ -134,7 +134,7 @@ if ($cache_type === CacheType::REDIS) {
 
 ### Service Construction
 ```php
-// Before (v1.x)
+// Before (v0.2.x)
 class SphinxAICache {
     private $redis;
     private $ttl;
@@ -145,7 +145,7 @@ class SphinxAICache {
     }
 }
 
-// After (v2.0+)
+// After (v0.3+)
 class SphinxAICache {
     public function __construct(
         private readonly Redis $redis,
@@ -156,12 +156,12 @@ class SphinxAICache {
 
 ### Method Signatures
 ```php
-// Before (v1.x)
+// Before (v0.2.x)
 public function search($query) {
     // ...
 }
 
-// After (v2.0+)
+// After (v0.3+)
 public function search(string $query): array|null {
     // ...
 }
